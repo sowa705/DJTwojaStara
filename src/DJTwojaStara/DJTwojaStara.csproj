@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <UserSecretsId>dotnet-WorkerExample-C60DBDB0-292C-40F3-BDD8-EF097AC0B28C</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSCore" Version="1.2.1.2" />
+    <PackageReference Include="CSCore.Opus" Version="1.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="Nefarius.DSharpPlus.Extensions.Hosting" Version="2.2.633-pre" />
+    <PackageReference Include="Nefarius.DSharpPlus.CommandsNext.Extensions.Hosting" Version="2.2.633-pre" />
+    <PackageReference Include="Nefarius.DSharpPlus.Interactivity.Extensions.Hosting" Version="2.2.633-pre" />
+    <PackageReference Include="Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting" Version="2.2.633-pre" />
+    <PackageReference Include="Nefarius.DSharpPlus.VoiceNext.Extensions.Hosting" Version="2.2.633-pre" />
+    <PackageReference Include="YoutubeDLSharp" Version="1.0.0-beta3" />
+    <PackageReference Include="z440.atl.core" Version="4.25.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Audio" />
+    <Folder Include="Services" />
+  </ItemGroup>
+</Project>
