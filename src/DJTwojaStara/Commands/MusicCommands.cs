@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DJTwojaStara.Audio;
@@ -116,7 +117,6 @@ public class MusicCommands : ApplicationCommandModule
             await RespondError(ctx, e);
         }
     }
-
     [SlashCommand("skip", "Skip the currently playing song")]
     public async Task SkipAsync(InteractionContext ctx)
     {
@@ -142,7 +142,6 @@ public class MusicCommands : ApplicationCommandModule
             await RespondError(ctx, e);
         }
     }
-
     [SlashCommand("queue", "Show the current queue")]
     public async Task QueueAsync(InteractionContext ctx)
     {
@@ -218,7 +217,6 @@ public class MusicCommands : ApplicationCommandModule
             await RespondError(ctx, e);
         }
     }
-
     [SlashCommand("disconnect", "Disconnects from the voice channel")]
     public async Task DisconnectAsync(InteractionContext ctx)
     {
@@ -229,6 +227,29 @@ public class MusicCommands : ApplicationCommandModule
             
             await _playbackService.GetPlaybackSession(channel.Id).DisconnectAsync();
             await Respond(ctx, "Disconnected from voice channel.");
+        }
+        catch (Exception e)
+        {
+            await RespondError(ctx, e);
+        }
+    }
+    [SlashCommand("twojastara", "Twoja stara")]
+    public async Task TwojaStaraAsync(InteractionContext ctx)
+    {
+        await Defer(ctx);
+        try
+        {
+            // enqueue a random joke from the folder
+            var jokes = Directory.GetFiles("twojastara");
+            var joke = jokes[new Random().Next(jokes.Length)];
+            // create an opusstreamable from the file
+            var stream = new OpusFileStreamable(joke, "twojastara");
+            // interrupt playback with the stream
+            var channel = GetUserChannel(ctx);
+            var session = _playbackService.GetPlaybackSession(channel.Id);
+            session.SetInterruption(stream);
+            
+            await Respond(ctx, $"Twoja stara jest tak stara że jest stara");
         }
         catch (Exception e)
         {
