@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using DJTwojaStara.Audio;
 using DJTwojaStara.Services;
@@ -240,7 +241,9 @@ public class MusicCommands : ApplicationCommandModule
         try
         {
             // enqueue a random joke from the folder
-            var jokes = Directory.GetFiles("twojastara");
+            // get the directory of the executable
+            var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var jokes = Directory.GetFiles(dir+"/twojastara");
             var joke = jokes[new Random().Next(jokes.Length)];
             // create an opusstreamable from the file
             var stream = new OpusFileStreamable(joke, "twojastara");
