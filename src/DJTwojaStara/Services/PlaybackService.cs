@@ -32,6 +32,10 @@ public class PlaybackService: IPlaybackService
     public PlaybackSession GetPlaybackSession(ulong channelId)
     {
         Sessions.RemoveAll(x => x.Disconnected);
+        if (!SessionExists(channelId))
+        {
+            throw new KeyNotFoundException("Session does not exist");
+        }
         return Sessions.FirstOrDefault(x => x.ChannelID == channelId);
     }
 

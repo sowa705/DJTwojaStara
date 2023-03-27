@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using DJTwojaStara.Audio;
 using DJTwojaStara.Services;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -22,172 +23,187 @@ public class MusicCommands : ApplicationCommandModule
         _playbackService = playbackService;
     }
     
+    public DiscordChannel GetUserChannel(InteractionContext ctx)
+    {
+        var channel = ctx.Member.VoiceState.Channel;
+        if (channel == null)
+        {
+            throw new Exception("User must be in a voice channel.");
+        }
+        return channel;
+    }
+    
+    public async Task Defer(InteractionContext ctx)
+    {
+        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+    }
+    
+    public async Task Respond(InteractionContext ctx, string message)
+    {
+        // create an embed
+        var embed = new DiscordEmbedBuilder
+        {
+            Title = "DJTwojaStara",
+            Description = message,
+            Color = new DiscordColor("#20FF20"),
+            Footer = new DiscordEmbedBuilder.EmbedFooter
+            {
+                Text = "Playing garbage since 2023",
+                IconUrl = "https://cdn.discordapp.com/emojis/1076975001183469578.png?v=1"
+            }
+        };
+        
+        // send the embed
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+    }
+    
+    public async Task RespondError(InteractionContext ctx, Exception e)
+    {
+        // create an embed
+        var embed = new DiscordEmbedBuilder
+        {
+            Title = "Error",
+            Description = $"{e.Message}\n{e.StackTrace}",
+            Color = new DiscordColor("#FF2020"),
+            Footer = new DiscordEmbedBuilder.EmbedFooter
+            {
+                Text = "Playing garbage since 2023",
+                IconUrl = "https://cdn.discordapp.com/emojis/1076975001183469578.png?v=1"
+            }
+        };
+        
+        // send the embed
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+    }
+    
     [SlashCommand("play", "Play a song")]
     public async Task PlayAsync(InteractionContext ctx, [Option("Query", "Song title or link")] string query)
     {
-        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        await Defer(ctx);
 
-        var embedBuilder = new DiscordEmbedBuilder()
+        try
         {
-            Color = DiscordColor.Green
-        };
+            var channel = GetUserChannel(ctx);
 
-        var response = await PlayHandler(ctx, query);
-
-        embedBuilder.Description = response;
-        
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embedBuilder));
-    }
-
-    async Task<string> PlayHandler(InteractionContext ctx, string query)
-    {
-        var channel = ctx.Member.VoiceState?.Channel;
-        
-        if (channel == null)
-        {
-            return "User must be in a voice channel";
-        }
-        
-        var streams = await _streamerService.StreamSongs(query);
-        
-        if (_playbackService.SessionExists(channel.Id))
-        {
-            string response;
-            if (streams.Count() > 1)
+            if (!_playbackService.SessionExists(channel.Id))
             {
-                response = $"<:botus:1076975001183469578> Enqueued {streams.Count()} songs";
+                await _playbackService.CreateSession(channel);
+            }
+            
+            var session = _playbackService.GetPlaybackSession(channel.Id);
+            var streamList = await _streamerService.StreamSongs(query);
+            
+            if (!streamList.Any())
+            {
+                await Respond(ctx, "No songs found");
+                return;
+            }
+            
+            session.AddToQueue(streamList);
+
+            if (streamList.Count() == 1)
+            {
+                await streamList.First().DownloadMetadataAsync(); // Download metadata before sending the message
+                await Respond(ctx, $"Added *{streamList.First().Name}* to the queue");
             }
             else
             {
-                var stream = streams.First();
-                await stream.DownloadMetadataAsync();
-                response = $"<:botus:1076975001183469578> Enqueued *{stream.Name}*";
+                await Respond(ctx, $"Added {streamList.Count()} songs to the queue");
             }
-            _playbackService.GetPlaybackSession(channel.Id).AddToQueue(streams);
-            return response;
         }
-        else
+        catch (Exception e)
         {
-            string response;
-            if (streams.Count() > 1)
-            {
-                response = $"<:botus:1076975001183469578> Creating new session and playing {streams.Count()} songs...";
-            }
-            else
-            {
-                var stream = streams.First();
-                await stream.DownloadMetadataAsync();
-                response = $"<:botus:1076975001183469578> Creating new session and playing *{stream.Name}* ...";
-            }
-            (await _playbackService.CreateSession(channel)).AddToQueue(streams);
-            return response;
+            await RespondError(ctx, e);
         }
     }
-    
-    /*
-    
+
     [SlashCommand("skip", "Skip the currently playing song")]
     public async Task SkipAsync(InteractionContext ctx)
     {
-        var channel = (Context.User as IGuildUser)?.VoiceChannel;
-        if (channel == null) { await RespondAsync("User must be in a voice channel."); return; }
-
-        if (_playbackService.SessionExists(channel.Id))
+        await Defer(ctx);
+        
+        try
         {
+            var channel = GetUserChannel(ctx);
             var session = _playbackService.GetPlaybackSession(channel.Id);
-            var queue = session.GetQueue();
-            if (queue.Count == 0)
-            {
-                await RespondAsync($"<:botus:1076975001183469578> Empty queue. Ending *{queue[0].Name}*");
-                session.Skip();
-            }
-            else
-            {
-                await RespondAsync($"<:botus:1076975001183469578> Skipping *{queue[0].Name}*");
-                session.Skip();
-            }
-        }
-        else
-        {
-            await RespondAsync($"<:botus:1076975001183469578> Empty queue and not playing anything. use `/play [search query]` to add a song.");
-        }
-    }
-    
-    [SlashCommand("queue", "Show the current queue")]
-    public async Task QueueAsync()
-    {
-        await DeferAsync();
-        var channel = (Context.User as IGuildUser)?.VoiceChannel;
-        if (channel == null) { await FollowupAsync("User must be in a voice channel."); return; }
+            
+            var currentSong = session.GetQueue().FirstOrDefault();
 
-        if (_playbackService.SessionExists(channel.Id))
-        {
-            var session = _playbackService.GetPlaybackSession(channel.Id);
-            var queue = session.GetQueue();
-            await queue.First().DownloadMetadataAsync();
-            if (queue.Count == 0)
+            if (currentSong == null)
             {
-                await FollowupAsync($"Empty queue. use `/play [search query]` to add a song.");
+                await Respond(ctx, "Nothing to skip");
                 return;
             }
-            var returnValue=$"<:botus:1076975001183469578> Currently playing: *{queue[0].Name}*";
-
-            if (queue.Count > 1)
-            {
-                returnValue += "\n**Queue**";
-            }
-
-            int displayValues = queue.Count;
-            if (displayValues > 6)
-            {
-                displayValues = 6;
-            }
-
-            for (int i = 1; i < displayValues; i++)
-            {
-                await queue[i].DownloadMetadataAsync();
-                returnValue += $"\n{i}.\t{queue[i].Name}";
-            }
-
-            if (queue.Count>6)
-            {
-                returnValue += $"\n{queue.Count - 5} more...";
-            }
-            await FollowupAsync(returnValue);
+            
+            await Respond(ctx, $"Skipping *{currentSong.Name}*");
         }
-        else
+        catch (Exception e)
         {
-            await FollowupAsync($"<:botus:1076975001183469578> Empty queue. use `/play [search query]` to add a song.");
+            await RespondError(ctx, e);
         }
     }
-    
-    [SlashCommand("eq", "Set the equalizer preset")]
-    public async Task EQAsync([Summary("preset","EQ preset to use")]EQPreset preset)
-    {
-        var channel = (Context.User as IGuildUser)?.VoiceChannel;
-        if (channel == null) { await RespondAsync("User must be in a voice channel."); return; }
 
-        if (_playbackService.SessionExists(channel.Id))
+    [SlashCommand("queue", "Show the current queue")]
+    public async Task QueueAsync(InteractionContext ctx)
+    {
+        await Defer(ctx);
+        try
         {
+            var channel = GetUserChannel(ctx);
             var session = _playbackService.GetPlaybackSession(channel.Id);
-            session.SetEQPreset(preset);
-            await RespondAsync($"<:botus:1076975001183469578> EQ preset set to {preset}");
+            
+            var queue = session.GetQueue();
+            var currentSong = queue.FirstOrDefault();
+            
+            var stringbuilder = new System.Text.StringBuilder();
+            stringbuilder.AppendLine($"**Current song:** {currentSong?.Name ?? "Nothing"}");
+            if (queue.Count() > 1)
+            {
+                stringbuilder.AppendLine("**Up next:**");
+                foreach (var song in queue.Skip(1).Take(15))
+                {
+                    stringbuilder.AppendLine($"- {song.Name}");
+                }
+
+                if (queue.Count() > 16)
+                {
+                    stringbuilder.AppendLine($"... and {queue.Count() - 16} more");
+                }
+            }
+            
+            await Respond(ctx, stringbuilder.ToString());
         }
-        else
+        catch (Exception e)
         {
-            await RespondAsync($"<:botus:1076975001183469578> Empty queue and not playing anything. use `/play [search query]` to add a song.");
+            await RespondError(ctx, e);
         }
     }
-    
-    [SlashCommand("interrupt", "Interrupt playback with a specific song")]
-    public async Task InterruptAsync([Summary("Query", "Song title or link")] string query)
+    [SlashCommand("eq", "Set the equalizer preset")]
+    public async Task EQAsync(InteractionContext ctx ,[Option("preset","EQ preset to use")] EQPreset preset)
     {
-        await DeferAsync();
-        var channel = (Context.User as IGuildUser)?.VoiceChannel;
-        if (channel == null) { await FollowupAsync("User must be in a voice channel."); return; }
-
-        if (_playbackService.SessionExists(channel.Id))
+        await Defer(ctx);
+        try
         {
+            var channel = GetUserChannel(ctx);
+            var session = _playbackService.GetPlaybackSession(channel.Id);
+            
+            session.SetEQPreset(preset);
+            
+            await Respond(ctx, $"Set EQ preset to *{preset}*");
+        }
+        catch (Exception e)
+        {
+            await RespondError(ctx, e);
+        }
+    }
+    [SlashCommand("interrupt", "Interrupt playback with a specific song")]
+    public async Task InterruptAsync(InteractionContext ctx, [Option("Query", "Song title or link")] string query)
+    {
+        await Defer(ctx);
+        try
+        {
+            var channel = GetUserChannel(ctx);
+            
             var session = _playbackService.GetPlaybackSession(channel.Id);
             var streams = await _streamerService.StreamSongs(query);
             var stream = streams.FirstOrDefault();
@@ -195,32 +211,29 @@ public class MusicCommands : ApplicationCommandModule
             
             session.SetInterruption(stream);
             
-            await FollowupAsync($"<:botus:1076975001183469578> Interrupted playback with {stream.Name}");
+            await Respond(ctx, $"Interrupting playback with *{stream.Name}*");
         }
-        else
+        catch (Exception e)
         {
-            await FollowupAsync($"<:botus:1076975001183469578> Session you are trying to interrupt does not exist. Use `/play [search query]` to add a song.");
+            await RespondError(ctx, e);
         }
     }
-    
-    [SlashCommand("disconnect", "Disconnects from the voice channel")]
-    public async Task DisconnectAsync()
-    {
-        var channel = (Context.User as IGuildUser)?.VoiceChannel;
-        if (channel == null) { await RespondAsync("User must be in a voice channel."); return; }
 
-        if (_playbackService.SessionExists(channel.Id))
+    [SlashCommand("disconnect", "Disconnects from the voice channel")]
+    public async Task DisconnectAsync(InteractionContext ctx)
+    {
+        await Defer(ctx);
+        try
         {
-            var session = _playbackService.GetPlaybackSession(channel.Id);
-            await session.DisconnectAsync();
-            await RespondAsync($"<:botus:1076975001183469578> Disconnected from voice channel.");
+            var channel = GetUserChannel(ctx);
+            
+            await _playbackService.GetPlaybackSession(channel.Id).DisconnectAsync();
+            await Respond(ctx, "Disconnected from voice channel.");
         }
-        else
+        catch (Exception e)
         {
-            await RespondAsync($"<:botus:1076975001183469578> Not connected to voice channel. Use `/play [search query]` to add a song.");
+            await RespondError(ctx, e);
         }
     }
-    
-    */
 }
 
