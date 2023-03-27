@@ -136,6 +136,8 @@ public class MusicCommands : ApplicationCommandModule
                 return;
             }
             
+            session.Skip();
+            
             await Respond(ctx, $"Skipping *{currentSong.Name}*");
         }
         catch (Exception e)
