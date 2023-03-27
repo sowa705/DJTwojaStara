@@ -37,13 +37,13 @@ public class GeneralModule : ApplicationCommandModule
     {
         var enumOpts = new EnumerationOptions();
         enumOpts.RecurseSubdirectories = true;
-        var files = Directory.GetFiles(Path.GetTempPath() + "/botus-temp", "*", enumOpts);
+        var files = Directory.GetFiles(Path.GetTempPath() + "/djtwojastara-temp", "*", enumOpts);
         var size = files.Select(x => new FileInfo(x).Length).Sum();
         
         var embed = new DiscordEmbedBuilder
         {
-            Title = "Server info",
-            Description = $"*Bot info*\nVersion 0.2\n*Cache info*\n{files.Length} files\n{(size/1024.0/1024.0).ToString("0.0")} MB used temp space",
+            Title = "DJTwojaStara",
+            Description = $"*Bot info*\nVersion 0.3\n*Cache info*\n{files.Length} files\n{(size/1024.0/1024.0).ToString("0.0")} MB used temp space",
             Color = DiscordColor.Blurple
         };
         

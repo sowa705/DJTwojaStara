@@ -24,7 +24,7 @@ public class YoutubeService : IStreamerService
 
     public YoutubeService()
     {
-        _path = Path.GetTempPath()+"/botus-temp";
+        _path = Path.GetTempPath()+"/djtwojastara-temp";
         Directory.CreateDirectory(_path);
         Directory.CreateDirectory(_path + "/ytdlp-cache");
     }
@@ -32,6 +32,39 @@ public class YoutubeService : IStreamerService
     {
         await YoutubeDL.DownloadYtDlpBinary(_path);
         await YoutubeDL.DownloadFFmpegBinary(_path);
+        
+        // run chmod +x on the binaries if on linux
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "chmod",
+                    Arguments = "+x " + _path + "/yt-dlp",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                }
+            };
+            process.Start();
+            process.WaitForExit();
+            
+            process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "chmod",
+                    Arguments = "+x " + _path + "/ffmpeg",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                }
+            };
+            process.Start();
+            process.WaitForExit();
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
