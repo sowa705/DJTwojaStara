@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using DSharpPlus.SlashCommands.EventArgs;
 using Microsoft.Extensions.Logging;
 using Nefarius.DSharpPlus.SlashCommands.Extensions.Hosting.Attributes;
@@ -48,6 +49,44 @@ public class GeneralModule : ApplicationCommandModule
         };
         
         await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
+    }
+    
+    [SlashCommand("clearcache", "Clear music cache")]
+    [SlashRequirePermissions(Permissions.Administrator)]
+    public async Task ClearCacheAsync(InteractionContext ctx)
+    {
+        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        
+        var enumOpts = new EnumerationOptions();
+        enumOpts.RecurseSubdirectories = true;
+        var files = Directory.GetFiles(Path.GetTempPath() + "/djtwojastara-temp/ytdlp-cache", "*", enumOpts);
+        
+        foreach (var file in files)
+        {
+            File.Delete(file);
+        }
+        
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "DJTwojaStara",
+            Description = $"Removed {files.Length} files from cache",
+            Color = DiscordColor.Green
+        }));
+    }
+    [SlashCommand("kill", "Kill the bot so it gets restarted")]
+    [SlashRequirePermissions(Permissions.Administrator)]
+    public async Task KillAsync(InteractionContext ctx)
+    {
+        var embed = new DiscordEmbedBuilder
+        {
+            Title = "DJTwojaStara",
+            Description = $"brb i gtg kms",
+            Color = DiscordColor.Red
+        };
+        
+        await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
+        
+        Process.GetCurrentProcess().Kill();
     }
 }
 [DiscordSlashCommandsEventsSubscriber]
