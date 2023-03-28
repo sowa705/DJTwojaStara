@@ -20,6 +20,5 @@
 
   <ItemGroup>
     <Folder Include="Audio" />
-    <Folder Include="Services" />
   </ItemGroup>
 </Project>

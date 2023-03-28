@@ -36,6 +36,7 @@ public class Program
                 
                 services
                     .AddSingleton<IPlaybackService, PlaybackService>()
+                    .AddSingleton<IAiService, LLaMaService>()
                     .AddSingleton<YoutubeService>()
                     .AddHostedService<IStreamerService>(x => x.GetService<YoutubeService>());
 

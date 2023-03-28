@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using DJTwojaStara.Services;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -16,6 +17,13 @@ namespace Template.Modules;
 
 public class GeneralModule : ApplicationCommandModule
 {
+    private readonly IAiService _aiService;
+    
+    public GeneralModule(IAiService aiService)
+    {
+        _aiService = aiService;
+    }
+    
     // Declare application command.
     [SlashCommand("latency", "Display bot latency")]
     public async Task LatencyAsync(InteractionContext ctx)
@@ -52,7 +60,6 @@ public class GeneralModule : ApplicationCommandModule
     }
     
     [SlashCommand("clearcache", "Clear music cache")]
-    [SlashRequirePermissions(Permissions.Administrator)]
     public async Task ClearCacheAsync(InteractionContext ctx)
     {
         await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
@@ -74,7 +81,6 @@ public class GeneralModule : ApplicationCommandModule
         }));
     }
     [SlashCommand("kill", "Kill the bot so it gets restarted")]
-    [SlashRequirePermissions(Permissions.Administrator)]
     public async Task KillAsync(InteractionContext ctx)
     {
         var embed = new DiscordEmbedBuilder
@@ -87,6 +93,14 @@ public class GeneralModule : ApplicationCommandModule
         await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
         
         Process.GetCurrentProcess().Kill();
+    }
+    
+    [SlashCommand("ask", "Ask the bot a question")]
+    public async Task AskAsync(InteractionContext ctx, [Option("question", "The question to ask")] string prompt)
+    {
+        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        
+        await _aiService.RespondToMessageAsync(prompt, ctx);
     }
 }
 [DiscordSlashCommandsEventsSubscriber]
