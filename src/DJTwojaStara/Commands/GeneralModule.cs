@@ -52,7 +52,7 @@ public class GeneralModule : ApplicationCommandModule
         var embed = new DiscordEmbedBuilder
         {
             Title = "DJTwojaStara",
-            Description = $"*Bot info*\nVersion 0.3\n*Cache info*\n{files.Length} files\n{(size/1024.0/1024.0).ToString("0.0")} MB used temp space",
+            Description = $"*Bot info*\nVersion 0.4\n*Cache info*\n{files.Length} files\n{(size/1024.0/1024.0).ToString("0.0")} MB used temp space",
             Color = DiscordColor.Blurple
         };
         
@@ -101,6 +101,19 @@ public class GeneralModule : ApplicationCommandModule
         await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
         
         await _aiService.RespondToMessageAsync(prompt, ctx);
+    }
+    
+    [SlashCommand("askabort", "Abort the current question")]
+    public async Task AskAbortAsync(InteractionContext ctx)
+    {
+        await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "DJTwojaStara",
+            Description = $"Aborted",
+            Color = DiscordColor.Red
+        }));
+        
+        await _aiService.AbortAsync();
     }
 }
 [DiscordSlashCommandsEventsSubscriber]

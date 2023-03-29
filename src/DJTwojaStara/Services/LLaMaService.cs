@@ -19,97 +19,52 @@ namespace DJTwojaStara.Services;
 public class LLaMaService: IHostedService, IAiService
 {
     private readonly string _path = "llama.cpp";
-
+    
     public LLaMaService()
     {
         _path = Path.GetTempPath()+"/djtwojastara-temp/";
     }
+
+    private CancellationTokenSource cts = new();
     
-    private Process process;
-    
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        return; //TODO make it actually work
-        // check if the llama.cpp folder exists
-        if (!Directory.Exists(_path))
+        if (!Directory.Exists(_path+"/llama.cpp"))
         {
-            // clone the repository
-            if (OperatingSystem.IsWindows())
-            {
-                return;
-            }
-            else if (OperatingSystem.IsLinux())
-            {
-                await InstallLinux();
-            }
-            else if (OperatingSystem.IsMacOS())
-            {
-                await InstallLinux(); // macos is just a linux distro
-            }
+            throw new ApplicationException("AI support not installed!, use the prepareAI.sh script to install it");
         }
-        
-        // check if the model exists
-        if (File.Exists(_path+"llama.cpp/models/ggml-model-q4_0.bin"))
-        {
-            // download the model
-            await DownloadModel();
-        }
+        return Task.CompletedTask;
     }
-
-    private async Task InstallLinux()
-    {
-        // get the repository off github
-        await RunCommand("git clone https://github.com/tarruda/llama.cpp", _path); // we use a fork with TCP support
-        
-        // run make
-        await RunCommand("make", _path+"/llama.cpp");
-    }
-
-    private async Task DownloadModel()
-    {
-        // TODO upload the model to a server and download it from there
-    }
-
-    private async Task DownloadFileTaskAsync(string uri, string fileName)
-    {
-        var client = new HttpClient();
-        await using var s = await client.GetStreamAsync(uri);
-        await using var fs = new FileStream(fileName, FileMode.CreateNew);
-        await s.CopyToAsync(fs);
-    }
-    
-    private async Task RunCommand(string command, string path)
-    {
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = command.Split(" ")[0],
-                Arguments = command.Substring(command.IndexOf(" ")),
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WorkingDirectory = path
-            }
-        };
-        process.Start();
-        process.WaitForExit();
-    }
-    
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        process.Kill();
         return Task.CompletedTask;
+    }
+    
+    public async Task AbortAsync()
+    {
+        cts.Cancel();
     }
 
     public async Task RespondToMessageAsync(string query, InteractionContext ctx)
     {
+        cts = new CancellationTokenSource(); // reset the cancellation token source
+        
         const string serverAddress = "127.0.0.1";
         const int serverPort = 8080;
         const string rPrompt = "### Instruction:";
-        const string nPredict = "4096";
+        const string nPredict = "2048";
         const string repeatPenalty = "1.0";
         // get the number of threads
-        string nThreads = Environment.ProcessorCount.ToString();
+        
+        var appropriateThreads = Environment.ProcessorCount;
+        
+        // hyperthreading on incel or ayymd machines doesnt make it faster when crunching numbers
+        if (System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.X64)
+        {
+            appropriateThreads /= 2;
+        }
+        
+        string nThreads = appropriateThreads.ToString();
         
         string userInput = query;
         
@@ -124,7 +79,7 @@ public class LLaMaService: IHostedService, IAiService
 
         // Pass the arguments to the server
         string[] args = {
-            "-t", nThreads, "-n", nPredict, "--repeat_penalty", repeatPenalty, "-i", "-r", rPrompt, "-p", alpacaPrompt
+            "-t", nThreads, "-n", nPredict, "--repeat_penalty", repeatPenalty, "-i", "-r", rPrompt, "-p", alpacaPrompt, "-c", nPredict, "-s", Random.Shared.Next(0,1024).ToString()
         };
         byte[] argsBytes = GetArgsBytes(args);
         stream.Write(argsBytes, 0, argsBytes.Length);
@@ -148,7 +103,7 @@ public class LLaMaService: IHostedService, IAiService
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
         var fullResponse = "";
         bool startEmbed = false;
-        while (true)
+        while (!cts.IsCancellationRequested)
         {
             int bytesRead = stream.Read(buffer, 0, buffer.Length);
             if (bytesRead == 0)
