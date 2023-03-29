@@ -209,6 +209,6 @@ public class LLaMaService: IHostedService, IAiService
         {
             builder.Append(arg).Append('\0');
         }
-        return Encoding.ASCII.GetBytes(builder.ToString());
+        return Encoding.UTF8.GetBytes(builder.ToString());
     }
 }
