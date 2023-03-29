@@ -115,6 +115,48 @@ public class GeneralModule : ApplicationCommandModule
         
         await _aiService.AbortAsync();
     }
+    // Declare application command.
+    [SlashCommand("restartinfer", "Restart the inference service if it gets stuck")]
+    public async Task RestartInferAsync(InteractionContext ctx)
+    {
+        await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "DJTwojaStara",
+            Description = $"Killing infer.service",
+            Color = DiscordColor.Red
+        }));
+        
+        var possibleServiceNames = new[]
+        {
+            "infer.service",
+            "inference.service"
+        };
+        
+        // run the systemctl command
+
+        foreach (var service in possibleServiceNames)
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "systemctl",
+                    Arguments = "restart " + service,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                }
+            };
+            process.Start();
+        }
+        
+        await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(new DiscordEmbedBuilder
+        {
+            Title = "DJTwojaStara",
+            Description = $"Restarted infer.service",
+            Color = DiscordColor.Green
+        }));
+    }
 }
 [DiscordSlashCommandsEventsSubscriber]
 public class SlashCommandsErrorHandler : IDiscordSlashCommandsEventsSubscriber

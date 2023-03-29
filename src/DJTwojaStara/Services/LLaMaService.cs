@@ -43,10 +43,32 @@ public class LLaMaService: IHostedService, IAiService
     public async Task AbortAsync()
     {
         cts.Cancel();
+        isRunning = false;
     }
+
+    private static bool isRunning = false;
 
     public async Task RespondToMessageAsync(string query, InteractionContext ctx)
     {
+        if (isRunning)
+        {
+            var errorEmbed = new DiscordEmbedBuilder
+            {
+                Title = "DJ Twoja Stara",
+                Description = "AI is already running, please wait for it to finish",
+                Color = DiscordColor.Red,
+                Footer = new DiscordEmbedBuilder.EmbedFooter
+                {
+                    Text = "Not responding to your stupid questions since 2023",
+                    IconUrl = "https://cdn.discordapp.com/emojis/1076975001183469578.png?v=1"
+                }
+            };
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(errorEmbed));
+            return;
+        }
+        
+        isRunning = true;
+
         cts = new CancellationTokenSource(); // reset the cancellation token source
         
         const string serverAddress = "127.0.0.1";
@@ -152,6 +174,7 @@ public class LLaMaService: IHostedService, IAiService
                 }
             }
         }
+        isRunning = false;
         
         // change the embed color to green to indicate that the response is complete
         
