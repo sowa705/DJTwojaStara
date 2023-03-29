@@ -29,6 +29,7 @@ public class LLaMaService: IHostedService, IAiService
     
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        return; //TODO make it actually work
         // check if the llama.cpp folder exists
         if (!Directory.Exists(_path))
         {
@@ -53,17 +54,6 @@ public class LLaMaService: IHostedService, IAiService
             // download the model
             await DownloadModel();
         }
-        
-        // start the server on port 8080 and dont wait for it to finish
-        Task.Run(() =>
-            process = Process.Start(new ProcessStartInfo
-            {
-                FileName = "main",
-                Arguments = "-m models/ggml-model-q4_0.bin --n_parts 1 --listen 8080",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WorkingDirectory = _path+"llama.cpp"
-            }));
     }
 
     private async Task InstallLinux()
