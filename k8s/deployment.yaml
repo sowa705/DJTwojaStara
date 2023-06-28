@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: DJTwojaStaraDeployment
+  labels:
+    app: DJTwojaStara
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: DJTwojaStara
+  template:
+    metadata:
+      labels:
+        app: DJTwojaStara
+    spec:
+      containers:
+        - name: DJTwojaStara
+          image: sowa705/djtwojastara:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: DJTwojaStaraToken
+                  key: TOKEN
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: DJTwojaStaraService
+spec:
+  selector:
+    app: DJTwojaStara
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+  
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: DJTwojaStaraIngress
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/affinity: "true"
+    traefik.ingress.kubernetes.io/frontend-entry-points: "http,https"
+    traefik.ingress.kubernetes.io/session-cookie-name: "my-app-cookie"
+    cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  rules:
+    - host: your-domain.example.com
+      http:
+        paths:
+          - path: /dj
+            pathType: Prefix
+            backend:
+              service:
+                name: DJTwojaStaraService
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - your-domain.example.com
+      secretName: djtwojastara-tls

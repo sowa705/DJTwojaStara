@@ -66,7 +66,7 @@ public class YoutubeStreamable : IStreamable
                 await Process.Start(
                     new ProcessStartInfo(
                         "ffmpeg",
-                        arguments: $"-i \"{res.Data}\" -vn -acodec copy {Path.GetDirectoryName(res.Data)}/{_id}.opus"
+                        arguments: $"-y -i \"{res.Data}\" -vn -acodec copy {Path.GetDirectoryName(res.Data)}/{_id}.opus"
                     )
                 )!.WaitForExitAsync();
             }

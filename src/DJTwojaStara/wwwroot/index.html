@@ -1,0 +1,96 @@
+<!doctype html>
+<head>
+    <title>DJTwojaStara</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/skeleton.css">
+    <link rel="stylesheet" href="css/normalize.css">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <h2>Performance</h2>
+        <div>
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    const ctx = document.getElementById('myChart');
+    async function fetchData() {
+        const response = await fetch('/api/info/performance');
+        const data = await response.json();
+        updatePerfChart(data);
+    }
+
+    function startFetchingData() {
+        initChart();
+        fetchData();
+
+        setInterval(() => {
+            fetchData();
+        }, 5000);
+    }
+
+    function initChart() {
+        window.myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels:[0],
+                datasets: [{
+                    label: 'CPU',
+                    data: [0],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    pointRadius: 0
+                },
+                {
+                    label: 'Memory',
+                    data: [0],
+                    backgroundColor: 'rgba(99, 255, 132, 0.2)',
+                    borderColor: 'rgba(99, 255, 132, 1)',
+                    pointRadius: 0
+                },
+                {
+                    label: 'Cache',
+                    data: [0],
+                    backgroundColor: 'rgba(99, 132, 255, 0.2)',
+                    borderColor: 'rgba(99, 132, 255, 1)',
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    function updatePerfChart(data) {
+        const labels = data.map(d => {
+            const date = new Date(d.timestamp);
+            return date.toLocaleString();
+        });
+        const cpu = data.map(d => d.cpu);
+        const memory = data.map(d => d.ram);
+        const cache = data.map(d => d.cacheSize);
+
+        if(!window.myChart){
+            initChart();
+        }
+
+        window.myChart.data.labels = labels;
+        window.myChart.data.datasets[0].data = cpu;
+        window.myChart.data.datasets[1].data = memory;
+        window.myChart.data.datasets[2].data = cache;
+
+        window.myChart.update();
+    }
+
+    startFetchingData();
+</script>

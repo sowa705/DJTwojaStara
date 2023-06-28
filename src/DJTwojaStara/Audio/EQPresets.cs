@@ -21,7 +21,7 @@ public static class EqualizerExtensions
             case EQPreset.Earrape:
                 for (int i = 0; i < gains.Length; i++)
                 {
-                    gains[i] = 60f-i*4f;
+                    gains[i] = 40f-i*4f;
                 }
                 break;
             case EQPreset.LaptopSpeakers:

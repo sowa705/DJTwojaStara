@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DJTwojaStara.Audio;
@@ -19,8 +20,9 @@ public class PlaybackService: IPlaybackService
 
     public async Task<PlaybackSession> CreateSession(DiscordChannel channel)
     {
-        var audioClient = await channel.ConnectAsync();
         
+        var audioClient = await channel.ConnectAsync();
+            
         var session = new PlaybackSession(channel.Id, audioClient, _logger);
         Sessions.Add(session);
 

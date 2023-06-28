@@ -52,7 +52,7 @@ public class GeneralModule : ApplicationCommandModule
         var embed = new DiscordEmbedBuilder
         {
             Title = "DJTwojaStara",
-            Description = $"*Bot info*\nVersion 0.4\n*Cache info*\n{files.Length} files\n{(size/1024.0/1024.0).ToString("0.0")} MB used temp space",
+            Description = $"*Bot info*\nVersion 0.5\n*Cache info*\n{files.Length} files\n{(size/1024.0/1024.0).ToString("0.0")} MB used temp space",
             Color = DiscordColor.Blurple
         };
         
