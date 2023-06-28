@@ -29,7 +29,7 @@ public class InfoController : ControllerBase
     }
     
     [HttpGet]
-    [Route("SessionCount")]
+    [Route("sessioncount")]
     public Task<ActionResult<int>> GetSessionCount()
     {
         var count = _playbackService.GetSessionCount();
