@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: DJTwojaStaraDeployment
+  name: djtwojastara-deployment
   labels:
-    app: DJTwojaStara
+    app: djtwojastara
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: DJTwojaStara
+      app: djtwojastara
   template:
     metadata:
       labels:
-        app: DJTwojaStara
+        app: djtwojastara
     spec:
       containers:
-        - name: DJTwojaStara
+        - name: djtwojastara
           image: sowa705/djtwojastara:latest
           ports:
             - containerPort: 80
@@ -23,27 +23,27 @@ spec:
             - name: TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: DJTwojaStaraToken
+                  name: djtwojastara-token
                   key: TOKEN
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: DJTwojaStaraService
+  name: djtwojastara-service
 spec:
   selector:
-    app: DJTwojaStara
+    app: djtwojastara
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
   type: LoadBalancer
-  
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: DJTwojaStaraIngress
+  name: djtwojastara-ingres
   annotations:
     kubernetes.io/ingress.class: "traefik"
     traefik.ingress.kubernetes.io/affinity: "true"
@@ -59,7 +59,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: DJTwojaStaraService
+                name: djtwojastara-service
                 port:
                   number: 80
   tls:
