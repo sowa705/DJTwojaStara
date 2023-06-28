@@ -13,3 +13,12 @@
 ## Usage
 
 Add your bot token to the TOKEN environment variable
+
+## Building
+
+Running in docker takes care of all dependencies and is recommended.
+
+```shell
+docker build -t djtwojastara .
+docker run -p 8080:80 djtwojastara -e TOKEN=your_token_here
+```

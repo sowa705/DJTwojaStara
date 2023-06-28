@@ -37,7 +37,14 @@ public class MusicCommands : ApplicationCommandModule
     
     public async Task Defer(InteractionContext ctx)
     {
-        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        try
+        {
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to defer response");
+        }
     }
     
     public async Task Respond(InteractionContext ctx, string message)
@@ -230,6 +237,23 @@ public class MusicCommands : ApplicationCommandModule
             
             await _playbackService.GetPlaybackSession(channel.Id).DisconnectAsync();
             await Respond(ctx, "Disconnected from voice channel.");
+        }
+        catch (Exception e)
+        {
+            await RespondError(ctx, e);
+        }
+    }
+    
+    [SlashCommand("id", "Gets the ID of the session")]
+    public async Task IdAsync(InteractionContext ctx)
+    {
+        await Defer(ctx);
+        try
+        {
+            var channel = GetUserChannel(ctx);
+            var session = _playbackService.GetPlaybackSession(channel.Id);
+            
+            await Respond(ctx, $"Session ID: {session.id}");
         }
         catch (Exception e)
         {

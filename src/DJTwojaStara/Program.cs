@@ -47,7 +47,8 @@ services
     .AddSingleton<YoutubeService>()
     .AddScoped<PerformanceSnapshotRepository>()
     .AddHostedService<PerformanceSnapshotService>()
-    .AddHostedService<IStreamerService>(x => x.GetService<YoutubeService>());
+    .AddSingleton<IStreamerService,YoutubeService>()
+    .AddHostedService(x => x.GetService<IStreamerService>());
 builder.Services.AddDirectoryBrowser();
 
 services.AddDiscordSlashCommands();

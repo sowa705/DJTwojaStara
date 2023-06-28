@@ -20,7 +20,6 @@ public class PlaybackService: IPlaybackService
 
     public async Task<PlaybackSession> CreateSession(DiscordChannel channel)
     {
-        
         var audioClient = await channel.ConnectAsync();
             
         var session = new PlaybackSession(channel.Id, audioClient, _logger);
@@ -41,9 +40,31 @@ public class PlaybackService: IPlaybackService
         return Sessions.FirstOrDefault(x => x.ChannelID == channelId);
     }
 
+    public PlaybackSession GetPlaybackSession(string sessionId)
+    {
+        Sessions.RemoveAll(x => x.Disconnected);
+        if (!SessionExists(sessionId))
+        {
+            throw new KeyNotFoundException("Session does not exist");
+        }
+        return Sessions.FirstOrDefault(x => x.id == sessionId);
+    }
+
     public bool SessionExists(ulong channelId)
     {
         Sessions.RemoveAll(x => x.Disconnected);
         return Sessions.Any(x => x.ChannelID == channelId);
+    }
+
+    public bool SessionExists(string sessionId)
+    {
+        Sessions.RemoveAll(x => x.Disconnected);
+        return Sessions.Any(x => x.id == sessionId);
+    }
+
+    public int GetSessionCount()
+    {
+        Sessions.RemoveAll(x => x.Disconnected);
+        return Sessions.Count;
     }
 }

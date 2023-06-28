@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="css/skeleton.css">
+    <link rel="stylesheet" href="css/normalize.css">
+    
+    <script>
+        const sessionId = new URLSearchParams(window.location.search).get('id');
+        
+        async function fetchInfo() {
+            const response = await fetch(`/api/player/${sessionId}`);
+            const data = await response.json();
+            update(data);
+        }
+        
+        function update(data) {
+            document.getElementById('currently-playing').innerHTML = `<h2>${data.currentTrack.name}</h2>`;
+            document.getElementById('queue').innerHTML = data.queue.map(track => `<h2>${track.name}</h2>`).join('');
+            document.getElementById('album-cover').src = data.currentTrack.coverUrl;
+        }
+        
+        function startFetchingData() {
+            fetchInfo();
+            
+            setInterval(() => {
+                fetchInfo();
+            }, 2000);
+        }
+        
+        function addSong() {
+            // lock the button
+            document.getElementById('songadd-button').disabled = true;
+            
+            const query = document.getElementById('songadd-query').value;
+            fetch(`/api/player/${sessionId}/addtrack`, {
+                method: 'POST',
+                body: JSON.stringify({ query }),
+            });
+            
+            // unlock the button
+            document.getElementById('songadd-button').disabled = false;
+        }
+        
+        startFetchingData();
+    </script>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="eight columns">
+            <h1>Currently playing</h1>
+            
+            <div id="currently-playing">
+                <img src="" alt="Album cover" id="album-cover">
+                <h2>Nothing</h2>
+            </div>
+        </div>
+        <div class="four columns" style="background-color: #DDD">
+            <h1>Queue</h1>
+            <div id="queue">
+                <h2>Nothing</h2>
+                </div>
+            <div>
+                <input type="text" id="songadd-query" placeholder="URL to song or name">
+                <button id="songadd-button" onclick="addSong()">Add to queue</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
