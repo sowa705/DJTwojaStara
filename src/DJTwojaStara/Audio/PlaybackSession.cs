@@ -11,6 +11,7 @@ using Template;
 namespace DJTwojaStara.Audio;
 public class PlaybackSession
 {
+    public string id;
     private VoiceNextConnection _audioClient;
     private MixerSource _mixer;
     readonly WaveFormat discordFormat = new WaveFormat(48000, 16, 2, AudioEncoding.Pcm);
@@ -22,6 +23,7 @@ public class PlaybackSession
 
     public PlaybackSession(ulong channelID, VoiceNextConnection client, ILogger logger)
     {
+        id = Guid.NewGuid().ToString();
         ChannelID = channelID;
         _audioClient = client;
         _logger = logger;
