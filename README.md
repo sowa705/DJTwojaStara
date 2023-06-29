@@ -12,7 +12,11 @@
 
 ## Usage
 
-Add your bot token to the TOKEN environment variable
+You can use a docker one-liner to run the bot.
+
+```shell
+docker run sowa705/djtwojastara:latest -p 8080:80 -e TOKEN=your_token_here
+```
 
 ## Building
 
