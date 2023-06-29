@@ -12,6 +12,7 @@ public record SessionInfoDto
 
 public record SessionTrackDto
 {
+    public int Id { get; init; }
     public string Name { get; init; }
     public float Length { get; init; }
     public string CoverUrl { get; init; }

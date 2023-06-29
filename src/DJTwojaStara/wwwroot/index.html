@@ -4,32 +4,46 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/skeleton.css">
     <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
 <body>
 <div class="container">
     <div class="row">
         <h2>Performance</h2>
+        <h3>Chart</h3>
         <div>
             <canvas id="myChart"></canvas>
         </div>
+        <h3>
+            Current sessions: <span id="sessionCount"></span>
+        </h3>
     </div>
 </div>
 </body>
 
 <script>
     const ctx = document.getElementById('myChart');
-    async function fetchData() {
+    const sessionCount = document.getElementById('sessionCount');
+    async function fetchPerfData() {
         const response = await fetch('/api/info/performance');
         const data = await response.json();
         updatePerfChart(data);
     }
+    
+    async function fetchSessionCount() {
+        const response = await fetch('/api/info/sessioncount');
+        const data = await response.json();
+        sessionCount.innerText = data;
+    }
 
     function startFetchingData() {
         initChart();
-        fetchData();
+        fetchPerfData();
+        fetchSessionCount();
 
         setInterval(() => {
-            fetchData();
+            fetchPerfData();
+            fetchSessionCount();
         }, 5000);
     }
 
@@ -64,7 +78,7 @@
                 scales: {
                     y: {
                         min: 0,
-                        max: 100
+                        max: 500
                     }
                 }
             }

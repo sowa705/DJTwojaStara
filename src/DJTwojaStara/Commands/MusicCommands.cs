@@ -9,6 +9,7 @@ using DJTwojaStara.Services;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DJTwojaStara.Commands;
@@ -16,13 +17,15 @@ namespace DJTwojaStara.Commands;
 public class MusicCommands : ApplicationCommandModule
 {
     private readonly ILogger _logger;
+    private readonly string _websiteUrl;
     private readonly YoutubeService _streamerService;
     private readonly IPlaybackService _playbackService;
-    public MusicCommands(YoutubeService streamerService, ILogger<MusicCommands> logger, IPlaybackService playbackService)
+    public MusicCommands(YoutubeService streamerService, ILogger<MusicCommands> logger, IPlaybackService playbackService, IConfiguration configuration)
     {
         _logger = logger;
         _streamerService = streamerService;
         _playbackService = playbackService;
+        _websiteUrl = configuration["WebUIUrl"];
     }
     
     public DiscordChannel GetUserChannel(InteractionContext ctx)
@@ -47,7 +50,7 @@ public class MusicCommands : ApplicationCommandModule
         }
     }
     
-    public async Task Respond(InteractionContext ctx, string message)
+    public async Task Respond(InteractionContext ctx, string message, string? id = null)
     {
         // create an embed
         var embed = new DiscordEmbedBuilder
@@ -55,6 +58,7 @@ public class MusicCommands : ApplicationCommandModule
             Title = "DJTwojaStara",
             Description = message,
             Color = new DiscordColor("#20FF20"),
+            Url = id != null ? _websiteUrl + "/player?id=" + id : null,
             Footer = new DiscordEmbedBuilder.EmbedFooter
             {
                 Text = "Playing garbage since 2023",
@@ -104,7 +108,7 @@ public class MusicCommands : ApplicationCommandModule
             
             if (!streamList.Any())
             {
-                await Respond(ctx, "No songs found");
+                await Respond(ctx, "No songs found",session.id);
                 return;
             }
             
@@ -113,11 +117,11 @@ public class MusicCommands : ApplicationCommandModule
             if (streamList.Count() == 1)
             {
                 await streamList.First().DownloadMetadataAsync(); // Download metadata before sending the message
-                await Respond(ctx, $"Added *{streamList.First().Name}* to the queue");
+                await Respond(ctx, $"Added *{streamList.First().Name}* to the queue",session.id);
             }
             else
             {
-                await Respond(ctx, $"Added {streamList.Count()} songs to the queue");
+                await Respond(ctx, $"Added {streamList.Count()} songs to the queue",session.id);
             }
         }
         catch (Exception e)

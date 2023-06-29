@@ -39,13 +39,13 @@ public class PlayerController : ControllerBase
             {
                 Name = session.GetQueue().First().Name,
                 Length = 0,
-                CoverUrl = "https://media.tenor.com/o656qFKDzeUAAAAC/rick-astley-never-gonna-give-you-up.gif"
+                CoverUrl = session.GetQueue().First().CoverUrl
             },
             Queue = session.GetQueue().Skip(1).Select(x=>new SessionTrackDto()
             {
                 Name = x.Name,
                 Length = 0,
-                CoverUrl = "https://media.tenor.com/o656qFKDzeUAAAAC/rick-astley-never-gonna-give-you-up.gif"
+                CoverUrl = x.CoverUrl
             }).ToList()
         };
         

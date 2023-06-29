@@ -23,15 +23,17 @@ public class PerformanceSnapshotService : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var lastCpuTime = CpuUsage.Get(CpuUsageScope.Process);
+        var delay = TimeSpan.FromSeconds(10);
         // schedule a task to run every 5 seconds
         _timer = new Timer(async _ =>
         {
             var currentCpuTime = CpuUsage.Get(CpuUsageScope.Process);
+            var cpuPercentage = (currentCpuTime - lastCpuTime).Value.TotalMicroSeconds / (delay.TotalMilliseconds*1000) * 100;
             // get performance snapshot
             var snapshot = new PerformanceSnapshot
             {
                 Host = Environment.MachineName,
-                CPU = (float) (currentCpuTime - lastCpuTime).Value.TotalMicroSeconds / 1000,
+                CPU = (float) cpuPercentage,
                 RAM = GC.GetTotalMemory(false) / 1024f / 1024f,
                 CacheSize = Helpers.GetUsedCacheSpace(),
                 Timestamp = DateTimeOffset.Now
@@ -41,7 +43,7 @@ public class PerformanceSnapshotService : IHostedService
             await _dbContext.PerformanceSnapshots.AddAsync(snapshot, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
             lastCpuTime = currentCpuTime;
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        }, null, TimeSpan.Zero, delay);
         
         return Task.CompletedTask;
     }
