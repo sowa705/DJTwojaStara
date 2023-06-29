@@ -44,6 +44,10 @@ public class YoutubeStreamable : IStreamable
                 Name += $" - ({TimeSpan.FromSeconds(metadata.Data.Duration.Value):g})";
             }
         }
+        else
+        {
+            Console.WriteLine($"Failed to fetch metadata for {_id}");
+        }
         metadataFetched = true;
     }
 
@@ -116,4 +120,6 @@ public class YoutubeStreamable : IStreamable
     }
 
     public string Name { get; private set; }
+    
+    public string CoverUrl {get => $"https://img.youtube.com/vi/{_id}/maxresdefault.jpg";}
 }
