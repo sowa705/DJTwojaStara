@@ -9,14 +9,18 @@
 <body>
 <div class="container">
     <div class="row">
-        <h2>Performance</h2>
-        <h3>Chart</h3>
-        <div>
-            <canvas id="myChart"></canvas>
+        <h2>DJTwojaStara 0.8</h2>
+        <a id="invite-link" href="">Invite this instance to your server</a>
+        <br>
+        <div style="background-color: #222; padding: 16px; border-radius: 10px;">
+            <h3>Performance dashboard</h3>
+            <p>
+                Currently serving <span id="sessionCount">0</span> sessions.
+            </p>
+            <div>
+                <canvas id="myChart"></canvas>
+            </div>
         </div>
-        <h3>
-            Current sessions: <span id="sessionCount"></span>
-        </h3>
     </div>
 </div>
 </body>
@@ -45,6 +49,15 @@
             fetchPerfData();
             fetchSessionCount();
         }, 5000);
+    }
+    
+    function fetchInviteLink() {
+        fetch('/api/info/invitelink')
+            .then(response => response.text())
+            .then(data => {
+                const inviteLink = document.getElementById('invite-link');
+                inviteLink.href = data;
+            });
     }
 
     function initChart() {
@@ -107,4 +120,6 @@
     }
 
     startFetchingData();
+    
+    fetchInviteLink();
 </script>

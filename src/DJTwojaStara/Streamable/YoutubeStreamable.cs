@@ -122,4 +122,5 @@ public class YoutubeStreamable : IStreamable
     public string Name { get; private set; }
     
     public string CoverUrl {get => $"https://img.youtube.com/vi/{_id}/maxresdefault.jpg";}
+    public int Id { get; set; }
 }

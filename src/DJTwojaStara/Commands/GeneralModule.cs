@@ -40,25 +40,6 @@ public class GeneralModule : ApplicationCommandModule
         await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
     }
     
-    // Declare application command.
-    [SlashCommand("info", "Display bot info")]
-    public async Task InfoAsync(InteractionContext ctx)
-    {
-        var enumOpts = new EnumerationOptions();
-        enumOpts.RecurseSubdirectories = true;
-        var files = Directory.GetFiles(Path.GetTempPath() + "/djtwojastara-temp", "*", enumOpts);
-        var size = files.Select(x => new FileInfo(x).Length).Sum();
-        
-        var embed = new DiscordEmbedBuilder
-        {
-            Title = "DJTwojaStara",
-            Description = $"*Bot info*\nVersion 0.7\n*Cache info*\n{files.Length} files\n{(size/1024.0/1024.0).ToString("0.0")} MB used temp space",
-            Color = DiscordColor.Blurple
-        };
-        
-        await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().AddEmbed(embed));
-    }
-    
     [SlashCommand("clearcache", "Clear music cache")]
     public async Task ClearCacheAsync(InteractionContext ctx)
     {

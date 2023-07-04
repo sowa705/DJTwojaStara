@@ -52,6 +52,7 @@ public class OpusFileStreamable : IStreamable
 
     public string Name { get; set; }
     public string CoverUrl { get; }
+    public int Id { get; set; }
 
     public void Dispose()
     {

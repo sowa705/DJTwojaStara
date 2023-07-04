@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using DJTwojaStara.Audio;
@@ -30,19 +31,22 @@ public class PlayerController : ControllerBase
         }
         
         var session = _playbackService.GetPlaybackSession(sessionId);
-        
+        var first = session.GetQueue().First();
         var dto = new SessionInfoDto
         {
             Id = session.id,
             ChannelId = session.ChannelID,
+            EqPreset = Enum.GetName(typeof(EQPreset), session.EQPreset),
             CurrentTrack = new SessionTrackDto()
             {
-                Name = session.GetQueue().First().Name,
+                Id = first.Id,
+                Name = first.Name,
                 Length = 0,
-                CoverUrl = session.GetQueue().First().CoverUrl
+                CoverUrl = first.CoverUrl
             },
             Queue = session.GetQueue().Skip(1).Select(x=>new SessionTrackDto()
             {
+                Id = x.Id,
                 Name = x.Name,
                 Length = 0,
                 CoverUrl = x.CoverUrl
@@ -80,6 +84,59 @@ public class PlayerController : ControllerBase
             return Ok();
         }
 
+        return Ok();
+    }
+    
+    [HttpPost]
+    [Route("{sessionID}/skip/{trackId}")]
+    public async Task<ActionResult> SkipTrack([FromRoute] string sessionId,[FromRoute] int trackId)
+    {
+        if (!_playbackService.SessionExists(sessionId))
+        {
+            return NotFound();
+        }
+        
+        var session = _playbackService.GetPlaybackSession(sessionId);
+        
+        session.RemoveById(trackId);
+        
+        return Ok();
+    }
+    
+    [HttpPost]
+    [Route("{sessionID}/skip")]
+    public async Task<ActionResult> SkipTrack([FromRoute] string sessionId)
+    {
+        if (!_playbackService.SessionExists(sessionId))
+        {
+            return NotFound();
+        }
+        
+        var session = _playbackService.GetPlaybackSession(sessionId);
+        
+        session.Skip(); // Skip current track
+        
+        return Ok();
+    }
+    
+    [HttpPost]
+    [Route("{sessionID}/eq/{preset}")]
+    public async Task<ActionResult> SetEq([FromRoute] string sessionId, [FromRoute] string preset)
+    {
+        if (!_playbackService.SessionExists(sessionId))
+        {
+            return NotFound();
+        }
+        
+        var session = _playbackService.GetPlaybackSession(sessionId);
+
+        if (!Enum.TryParse<EQPreset>(preset, out var presetenum))
+        {
+            return BadRequest("Invalid preset");
+        }
+        
+        session.SetEQPreset(presetenum);
+        
         return Ok();
     }
 }

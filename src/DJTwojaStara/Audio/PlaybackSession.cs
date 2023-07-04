@@ -20,7 +20,17 @@ public class PlaybackSession
     private ILogger _logger;
     public bool Disconnected;
     private Equalizer _equalizer;
+    
+    private EQPreset _eqPreset = EQPreset.Normal;
+    public EQPreset EQPreset
+    {
+        get => _eqPreset;
+        set {
+            SetEQPreset(value);
+        }
+    }
 
+    int trackCount = 0;
     public PlaybackSession(ulong channelID, VoiceNextConnection client, ILogger logger)
     {
         id = Guid.NewGuid().ToString();
@@ -41,9 +51,15 @@ public class PlaybackSession
     {
         foreach (var source in sources)
         {
+            source.Id = trackCount++;
             _logger.LogInformation("Adding source {source} to queue", source.Name);
             _mixer.Sources.Enqueue(source);
         }
+    }
+    
+    public void RemoveById(int id)
+    {
+        _mixer.Sources = new Queue<IStreamable>(_mixer.Sources.Where(x => x.Id != id));
     }
 
     public void Skip()
@@ -52,6 +68,7 @@ public class PlaybackSession
     }
     public void SetEQPreset(EQPreset preset)
     {
+        _eqPreset = preset;
         _equalizer.UseEQPreset(preset);
     }
     

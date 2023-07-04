@@ -10,9 +10,15 @@
     
     <script>
         const sessionId = new URLSearchParams(window.location.search).get('id');
-        
+        let lastUpdate = null;
         async function fetchInfo() {
             const response = await fetch(`/api/player/${sessionId}`);
+            
+            if (response.status === 404) {
+                alert('Session not found');
+                window.location.href = '/';
+            }
+            
             const data = await response.json();
             update(data);
         }
@@ -20,6 +26,11 @@
         function update(data) {
             document.getElementById('currently-playing').innerHTML = `<h2>${data.currentTrack.name}</h2>`;
             document.getElementById('album-cover').src = data.currentTrack.coverUrl;
+            if (data.eqPreset.toLowerCase() !== lastUpdate?.eqPreset.toLowerCase()) // idk what will come from the server
+                document.getElementById('eq-mode').value = data.eqPreset;
+            lastUpdate = data;
+            
+            document.title = `DJ - ${data.currentTrack.name}`;
             
             Alpine.store('queue').queueItems = data.queue;
         }
@@ -29,7 +40,7 @@
             
             setInterval(() => {
                 fetchInfo();
-            }, 1000);
+            }, 2000);
         }
         
         function addSong() {
@@ -37,6 +48,7 @@
             document.getElementById('songadd-button').disabled = true;
             
             const query = document.getElementById('songadd-query').value;
+            document.getElementById('songadd-query').value = '';
             fetch(`/api/player/${sessionId}/addtrack`, {
                 method: 'POST',
                 headers: {
@@ -48,9 +60,30 @@
             // unlock the button
             document.getElementById('songadd-button').disabled = false;
         }
+        
+        function skipSong(id) {
+            fetch(`/api/player/${sessionId}/skip/${id}`, {
+                method: 'POST'
+            });
+        }
+
+        function skip() {
+            fetch(`/api/player/${sessionId}/skip/`, {
+                method: 'POST'
+            });
+        }
+        
         document.addEventListener("DOMContentLoaded", (event) => {
             startFetchingData();
         });
+        
+        function setEqMode() {
+            
+            const eqMode = document.getElementById('eq-mode').value;
+            fetch(`/api/player/${sessionId}/eq/${eqMode}`, {
+                method: 'POST'
+            });
+        }
 
         document.addEventListener('alpine:init', () => {
             Alpine.store('queue', {
@@ -64,11 +97,17 @@
     <div class="eight columns">
         <h3>Currently playing</h3>
         <div style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <img src="https://www.revolvermag.com/sites/default/files/styles/original_image__844px_x_473px_/public/media/section-media/master_cover.jpg" alt="Album cover" id="album-cover" style="border-radius: 16px; width: 400px;">
+            <img src="https://www.revolvermag.com/sites/default/files/styles/original_image__844px_x_473px_/public/media/section-media/master_cover.jpg" alt="Album cover" id="album-cover" style="border-radius: 16px; width: 400px; height: 400px; object-fit: cover;">
             <p id="currently-playing">Nothing</p>
         </div>
         <div id="playback-controls">
-            <button style="margin-left: auto">Skip</button>
+            <button onclick="skip()" style="margin-left: auto">Skip</button>
+            <select onchange="setEqMode()" id="eq-mode" style="margin-left: 10px">
+                <option value="Normal">Normal</option>
+                <option value="BassBoost">Bass boost</option>
+                <option value="Earrape">Earrape</option>
+                <option value="LaptopSpeakers">Laptop speakers</option>
+            </select>
         </div>
     </div>
     <div class="four columns queue">
@@ -82,13 +121,12 @@
         <div x-data id="queue" class="queue-container">
             <template x-for="item in $store.queue.queueItems">
                 <div style="display: flex; flex-direction: row; align-items: center;">
-                    <img :src="item.coverUrl" alt="Album cover" style="border-radius: 16px; width: 64px;">
+                    <img :src="item.coverUrl" alt="Album cover" style="border-radius: 16px; height: 64px; width: 64px; object-fit: cover;">
                     <div x-text="item.name" style="margin-left: 10px"></div>
-                    <button style="margin-left: auto">X</button>
+                    <button x-on:click="skipSong(item.id)" style="margin-left: auto">X</button>
                 </div>
             </template>
         </div>
-        
     </div>
 </div>
 </body>

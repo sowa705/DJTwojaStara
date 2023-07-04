@@ -13,15 +13,15 @@ public static class EqualizerExtensions
             case EQPreset.Normal:
                 break; // we dont have to do anything
             case EQPreset.BassBoost:
-                gains[0] = 8f;
-                gains[1] = 5f;
-                gains[2] = 3f;
+                gains[0] = 10f;
+                gains[1] = 8f;
+                gains[2] = 5f;
                 gains[3] = 1f;
                 break;
             case EQPreset.Earrape:
                 for (int i = 0; i < gains.Length; i++)
                 {
-                    gains[i] = 40f-i*4f;
+                    gains[i] = 25f-i*0.5f;
                 }
                 break;
             case EQPreset.LaptopSpeakers:
