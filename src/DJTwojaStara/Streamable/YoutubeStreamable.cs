@@ -101,6 +101,7 @@ public class YoutubeStreamable : IStreamable
         
         _downloadTask = Task.Run(async () =>
         {
+            await DownloadMetadataAsync();
             await DownloadFile();
         });
     }

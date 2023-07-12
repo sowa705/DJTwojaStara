@@ -3,6 +3,9 @@ WORKDIR /app
 COPY . .
 RUN dotnet restore
 RUN dotnet publish -o /app/published-app
+# build vue app in /src/DJTwojaStara-UI
+RUN apk add npm && cd src/DJTwojaStara-UI && npm install && npm run build && cp -r dist/* /app/published-app/wwwroot
+
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine as runtime
 WORKDIR /app

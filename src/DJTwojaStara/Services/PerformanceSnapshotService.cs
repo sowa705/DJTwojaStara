@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DJTwojaStara.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Universe.CpuUsage;
@@ -14,9 +15,9 @@ public class PerformanceSnapshotService : IHostedService
     private Timer _timer;
     private readonly ILogger<PerformanceSnapshotService> _logger;
 
-    public PerformanceSnapshotService(MainDbContext dbContext, ILogger<PerformanceSnapshotService> logger)
+    public PerformanceSnapshotService(IServiceScopeFactory serviceScopeFactory, ILogger<PerformanceSnapshotService> logger)
     {
-        _dbContext = dbContext;
+        _dbContext = serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<MainDbContext>();
         _logger = logger;
     }
 

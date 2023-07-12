@@ -58,7 +58,7 @@ public class MusicCommands : ApplicationCommandModule
             Title = "DJTwojaStara",
             Description = message,
             Color = new DiscordColor("#20FF20"),
-            Url = id != null ? _websiteUrl + "/player?id=" + id : null,
+            Url = id != null ? _websiteUrl + "/player/" + id : null,
             Footer = new DiscordEmbedBuilder.EmbedFooter
             {
                 Text = "Playing garbage since 2023",

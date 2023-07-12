@@ -38,9 +38,15 @@ public class InfoController : ControllerBase
         var count = _playbackService.GetSessionCount();
         return Task.FromResult<ActionResult<int>>(Ok(count));
     }
+    [HttpGet]
+    [Route("invite/enabled")]
+    public Task<ActionResult<bool>> GetInviteEnablement()
+    {
+        return Task.FromResult<ActionResult<bool>>(Ok(true));
+    }
     
     [HttpGet]
-    [Route("invitelink")]
+    [Route("invite/link")]
     public Task<ActionResult<string>> GetInviteLink()
     {
         var url = $"https://discord.com/api/oauth2/authorize?client_id={_discordClientService.Client.CurrentApplication.Id}&permissions=2150647808&scope=bot%20applications.commands";
