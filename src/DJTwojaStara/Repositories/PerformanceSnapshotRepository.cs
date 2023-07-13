@@ -23,9 +23,9 @@ public class PerformanceSnapshotRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
     
-    public async Task<IEnumerable<PerformanceSnapshot>> GetLastHourAsync(CancellationToken cancellationToken)
+    public Task<IEnumerable<PerformanceSnapshot>> GetLastHourAsync(CancellationToken cancellationToken)
     {
-        var list = await _dbContext.PerformanceSnapshots.ToListAsync(cancellationToken: cancellationToken);
-        return list.Where(x => x.Timestamp > DateTimeOffset.Now.AddHours(-1));
+        var list = _dbContext.PerformanceSnapshots;
+        return Task.FromResult<IEnumerable<PerformanceSnapshot>>(list.Where(x => x.Timestamp > DateTimeOffset.Now.AddHours(-1).ToUnixTimeSeconds()));
     }
 }

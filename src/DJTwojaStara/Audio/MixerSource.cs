@@ -1,20 +1,29 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using CSCore;
+using DJTwojaStara.Models;
+using DJTwojaStara.Services;
 
 namespace DJTwojaStara.Audio;
 class MixerSource : ISampleSource
 {
-    public MixerSource()
-    {
-        WaveFormat = new WaveFormat(48000, 32, 2);
-    }
-    public Queue<IStreamable> Sources = new Queue<IStreamable>();
+    private readonly PlayList _playList;
+    private readonly IStreamerService _streamerService;
     public IStreamable CurrentStreamable { get; private set; }
     private ISampleSource? _currentSource;
     
     public IStreamable? Interrupt { get; set; }
     private ISampleSource? _interruptSource;
+    
+    public MixerSource(PlayList playList, IStreamerService streamerService)
+    {
+        _playList = playList;
+        _streamerService = streamerService;
+        
+        WaveFormat = new WaveFormat(48000, 32, 2);
+    }
+    
     public int Read(float[] buffer, int offset, int count)
     {
         int readSamples = 0;
@@ -22,17 +31,24 @@ class MixerSource : ISampleSource
         {
             if (_currentSource == null)
             {
-                if (!Sources.TryPeek(out _))
+                // can we get a new song?
+                if (_playList.CurrentSong + 1 >= _playList.SongOrder.Count)
                 {
-                    return 0;
+                    // no more songs in the queue
+                    return readSamples;
                 }
-
-                CurrentStreamable = Sources.Dequeue();
-                _currentSource = CurrentStreamable.GetSampleSource().Result;
+                // lets get the next song in the queue
+                var nextSong = _playList.Songs.First(x => x.Id == _playList.SongOrder[_playList.CurrentSong]);
+                CurrentStreamable = _streamerService.GetStreamable(nextSong).Result;
                 
-                if (Sources.TryPeek(out _))
+                _currentSource = CurrentStreamable.GetSampleSource().Result;
+                _playList.CurrentPosition = 0;
+                
+                // preheat next song
+                if (_playList.CurrentSong + 1 < _playList.SongOrder.Count)
                 {
-                    Sources.Peek().Preheat();
+                    var nextNextSong = _playList.Songs.First(x => x.Id == _playList.SongOrder[_playList.CurrentSong + 1]);
+                    _streamerService.GetStreamable(nextNextSong).Result.Preheat();
                 }
             }
 
@@ -72,6 +88,7 @@ class MixerSource : ISampleSource
                     if (samples==0) //reasonably close to the end
                     {
                         _currentSource = null;
+                        _playList.CurrentSong++;
                         return readSamples;
                     }
                 }
@@ -88,20 +105,15 @@ class MixerSource : ISampleSource
         Console.WriteLine("dispose called");
     }
 
-    public void Skip()
+    public void ReloadSong()
     {
-        Console.WriteLine("skip called");
-
-        if (_currentSource != null)
-        {
-            CurrentStreamable.Dispose();
-        }
         _currentSource = null;
+        CurrentStreamable.Dispose();
+        CurrentStreamable = null;
     }
-
     public bool Available
     {
-        get => Sources.Count > 0 || _currentSource!=null;
+        get => _playList.Songs.Count > 0;
     }
     public bool CanSeek { get=>false; }
     public WaveFormat WaveFormat { get; }

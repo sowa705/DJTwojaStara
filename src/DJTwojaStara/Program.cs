@@ -44,10 +44,10 @@ void ConfigureServices(WebApplicationBuilder builder)
     builder.Services
         .AddSingleton<IPlaybackService, PlaybackService>()
         .AddSingleton<IAiService, LLaMaService>()
-        .AddSingleton<YoutubeService>()
+        .AddSingleton<IStreamerService, YTDlpService>()
+        .AddSingleton<ISearchService>(new YoutubeApiService(builder.Configuration["YoutubeApiKey"]))
         .AddScoped<PerformanceSnapshotRepository>()
-        .AddHostedService<PerformanceSnapshotService>()
-        .AddSingleton<IStreamerService,YoutubeService>()
+        //.AddHostedService<PerformanceSnapshotService>()
         .AddHostedService(x => x.GetService<IStreamerService>());
 }
 

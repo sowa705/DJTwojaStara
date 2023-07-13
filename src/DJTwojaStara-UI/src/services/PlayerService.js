@@ -23,6 +23,10 @@ export async function addSongToQueue(sessionid, url) {
     });
 }
 
-export async function skipCurrentSong(sessionid) {
-    const response = await axios.post(apiBase+'/api/Player/'+sessionid+'/skip');
+export async function nextSong(sessionid) {
+    const response = await axios.post(apiBase+'/api/Player/'+sessionid+'/next');
+}
+
+export async function prevSong(sessionid) {
+    const response = await axios.post(apiBase+'/api/Player/'+sessionid+'/prev');
 }

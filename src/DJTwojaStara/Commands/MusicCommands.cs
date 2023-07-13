@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using DJTwojaStara.Audio;
 using DJTwojaStara.Services;
@@ -18,12 +19,14 @@ public class MusicCommands : ApplicationCommandModule
 {
     private readonly ILogger _logger;
     private readonly string _websiteUrl;
-    private readonly YoutubeService _streamerService;
+    private readonly IStreamerService _streamerService;
+    private readonly ISearchService _searchService;
     private readonly IPlaybackService _playbackService;
-    public MusicCommands(YoutubeService streamerService, ILogger<MusicCommands> logger, IPlaybackService playbackService, IConfiguration configuration)
+    public MusicCommands(IStreamerService streamerService, ILogger<MusicCommands> logger, IPlaybackService playbackService, ISearchService searchService, IConfiguration configuration)
     {
         _logger = logger;
         _streamerService = streamerService;
+        _searchService = searchService;
         _playbackService = playbackService;
         _websiteUrl = configuration["WebUIUrl"];
     }
@@ -104,24 +107,22 @@ public class MusicCommands : ApplicationCommandModule
             }
             
             var session = _playbackService.GetPlaybackSession(channel.Id);
-            var streamList = await _streamerService.StreamSongs(query);
-            
-            if (!streamList.Any())
+            var searchList = await _searchService.Search(query);
+            if (!searchList.Any())
             {
                 await Respond(ctx, "No songs found",session.id);
                 return;
             }
             
-            session.AddToQueue(streamList);
+            await session.AddToQueue(searchList);
 
-            if (streamList.Count() == 1)
+            if (searchList.Count() == 1)
             {
-                await streamList.First().DownloadMetadataAsync(); // Download metadata before sending the message
-                await Respond(ctx, $"Added *{streamList.First().Name}* to the queue",session.id);
+                await Respond(ctx, $"Added *{searchList.First().Name}* to the queue",session.id);
             }
             else
             {
-                await Respond(ctx, $"Added {streamList.Count()} songs to the queue",session.id);
+                await Respond(ctx, $"Added {searchList.Count()} songs to the queue",session.id);
             }
         }
         catch (Exception e)
@@ -139,7 +140,7 @@ public class MusicCommands : ApplicationCommandModule
             var channel = GetUserChannel(ctx);
             var session = _playbackService.GetPlaybackSession(channel.Id);
             
-            var currentSong = session.GetQueue().FirstOrDefault();
+            var currentSong = session.PlayList.Songs[session.PlayList.CurrentSong];
 
             if (currentSong == null)
             {
@@ -147,7 +148,7 @@ public class MusicCommands : ApplicationCommandModule
                 return;
             }
             
-            session.Skip();
+            session.NextSong();
             
             await Respond(ctx, $"Skipping *{currentSong.Name}*");
         }
@@ -165,23 +166,15 @@ public class MusicCommands : ApplicationCommandModule
             var channel = GetUserChannel(ctx);
             var session = _playbackService.GetPlaybackSession(channel.Id);
             
-            var queue = session.GetQueue();
-            var currentSong = queue.FirstOrDefault();
+            var queue = session.PlayList.Songs.Skip(session.PlayList.CurrentSong + 1).Take(10).ToList();
             
-            var stringbuilder = new System.Text.StringBuilder();
-            stringbuilder.AppendLine($"**Current song:** {currentSong?.Name ?? "Nothing"}");
-            if (queue.Count() > 1)
+            var stringbuilder = new StringBuilder();
+            stringbuilder.AppendLine($"**Now playing:** {session.PlayList.Songs[session.PlayList.CurrentSong].Name}");
+            stringbuilder.AppendLine();
+            stringbuilder.AppendLine("**Up next:**");
+            foreach (var song in queue)
             {
-                stringbuilder.AppendLine("**Up next:**");
-                foreach (var song in queue.Skip(1).Take(15))
-                {
-                    stringbuilder.AppendLine($"- {song.Name}");
-                }
-
-                if (queue.Count() > 16)
-                {
-                    stringbuilder.AppendLine($"... and {queue.Count() - 16} more");
-                }
+                stringbuilder.AppendLine($"- {song.Name}");
             }
             
             await Respond(ctx, stringbuilder.ToString());
@@ -218,13 +211,19 @@ public class MusicCommands : ApplicationCommandModule
             var channel = GetUserChannel(ctx);
             
             var session = _playbackService.GetPlaybackSession(channel.Id);
-            var streams = await _streamerService.StreamSongs(query);
-            var stream = streams.FirstOrDefault();
-            await stream.DownloadMetadataAsync();
+            var searchList = await _searchService.Search(query);
+            
+            if (!searchList.Any())
+            {
+                await Respond(ctx, "No songs found");
+                return;
+            }
+            
+            var stream = await _streamerService.GetStreamable(searchList.First());
             
             session.SetInterruption(stream);
             
-            await Respond(ctx, $"Interrupting playback with *{stream.Name}*");
+            await Respond(ctx, $"Interrupting playback with *{searchList.First().Name}*");
         }
         catch (Exception e)
         {
@@ -258,31 +257,6 @@ public class MusicCommands : ApplicationCommandModule
             var session = _playbackService.GetPlaybackSession(channel.Id);
             
             await Respond(ctx, $"Session ID: {session.id}");
-        }
-        catch (Exception e)
-        {
-            await RespondError(ctx, e);
-        }
-    }
-    [SlashCommand("twojastara", "Twoja stara")]
-    public async Task TwojaStaraAsync(InteractionContext ctx)
-    {
-        await Defer(ctx);
-        try
-        {
-            // enqueue a random joke from the folder
-            // get the directory of the executable
-            var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var jokes = Directory.GetFiles(dir+"/twojastara");
-            var joke = jokes[new Random().Next(jokes.Length)];
-            // create an opusstreamable from the file
-            var stream = new OpusFileStreamable(joke, "twojastara");
-            // interrupt playback with the stream
-            var channel = GetUserChannel(ctx);
-            var session = _playbackService.GetPlaybackSession(channel.Id);
-            session.SetInterruption(stream);
-            
-            await Respond(ctx, $"Twoja stara jest tak stara że jest stara");
         }
         catch (Exception e)
         {

@@ -10,15 +10,19 @@
         <div class="currently-playing-info">
           <h4>{{ currentSong?.name }}</h4>
         </div>
+        <div class="currently-playing-stats">
+          <p>{{formattedPosition()}}</p>
+        </div>
         <div class="currently-playing-controls">
-          <button @click="skipSong">Skip</button>
+          <button @click="previousSong">Prev</button>
+          <button @click="skipSong">Next</button>
         </div>
       </div>
     </div>
     <div class="four columns sidepanel">
-      <h4>Queue</h4>
+      <h4>Playlist</h4>
       <div class="queue-box">
-        <QueueEntry v-for="song in queue" :song="song" :key="song.id" @delete-song="removeFromQueue" />
+        <QueueEntry v-for="song in queue" :song="song" :key="song.id" @delete-song="removeFromQueue" :currentlyPlaying="song.id === currentSong.id"  />
       </div>
       <br>
       <div class="song-add">
@@ -34,7 +38,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { getSessionData, deleteSongFromQueue, addSongToQueue, skipCurrentSong } from "../services/PlayerService";
+import { getSessionData, deleteSongFromQueue, addSongToQueue, nextSong, prevSong } from "../services/PlayerService";
 import QueueEntry from "../components/QueueEntry.vue";
 const sessionId = ref(useRoute().params.id);
 
@@ -45,19 +49,31 @@ let currentSong = ref(null);
 
 onMounted(async () => {
   updateSession();
-  setInterval(updateSession, 2000);
+  setInterval(updateSession, 1000);
 });
+
+const formattedPosition = () => {
+  if (!session.value) return "";
+
+  if (session.value.playList.currentPosition) {
+    let minutes = Math.floor(session.value.playList.currentPosition / 60);
+    let seconds = Math.round(session.value.playList.currentPosition % 60);
+    return minutes.toString().padStart(2, '0') + ':' + seconds.toFixed(0).toString().padStart(2, '0');
+  } else {
+    return "";
+  }
+}
 
 const updateSession = async () => {
   session.value = await getSessionData(sessionId.value);
-  queue.value = session.value.queue;
-  currentSong.value = session.value.currentTrack;
+  queue.value = session.value.playList.songs;
+  currentSong.value = queue.value[session.value.playList.currentSong];
   document.title = "DJ - "+currentSong.value.name;
 }
 
 const removeFromQueue = async (song) => {
   const songId = queue.value.find(s => s.id === song.id).id;
-  
+
   await deleteSongFromQueue(sessionId.value, songId);
   await updateSession();
 }
@@ -76,7 +92,12 @@ const addSong = async () => {
 }
 
 const skipSong = async () => {
-  await skipCurrentSong(sessionId.value);
+  await nextSong(sessionId.value);
+  await updateSession();
+}
+
+const previousSong = async () => {
+  await prevSong(sessionId.value);
   await updateSession();
 }
 </script>
@@ -94,6 +115,7 @@ const skipSong = async () => {
   display: flex;
   flex-direction: column;
   overflow: auto;
+  flex-grow: 1;
   gap: 10px;
 }
 .player {
@@ -128,6 +150,8 @@ const skipSong = async () => {
   height: 100%;
   filter: blur(100px);
   z-index: -1;
+  background-size: cover; /* or use 100% 100% if you want the image to stretch */
+  background-position: center; /* Keep this if you want the image to stay centered after scaling */
   overflow: hidden;
 }
 .blur-background::after {

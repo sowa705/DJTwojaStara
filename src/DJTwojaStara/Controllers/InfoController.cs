@@ -32,6 +32,14 @@ public class InfoController : ControllerBase
     }
     
     [HttpGet]
+    [Route("version")]
+    public async Task<ActionResult<IEnumerable<PerformanceSnapshot>>> GetApplicationVersion()
+    {
+        var version = typeof(Program).Assembly.GetName().Version;
+        return Ok(version);
+    }
+    
+    [HttpGet]
     [Route("sessioncount")]
     public Task<ActionResult<int>> GetSessionCount()
     {

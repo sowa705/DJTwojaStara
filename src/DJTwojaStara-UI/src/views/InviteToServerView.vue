@@ -1,6 +1,6 @@
 <script setup>
 import QrcodeVue from 'qrcode.vue'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { getInviteLink, getInviteSupport } from "../services/InviteService"
 
 const qrOptions = computed(() => ({
@@ -9,13 +9,12 @@ const qrOptions = computed(() => ({
   colorLight: '#ffffff',
   correctLevel: 'L',
 }))
-
+const inviteEnabled = ref(false)
+const inviteLink = ref('')
 onMounted(async () => {
   inviteEnabled.value = await getInviteSupport()
   inviteLink.value = await getInviteLink()
 })
-
-const currentSessionCount = computed(() => 0)
 </script>
 
 <template>

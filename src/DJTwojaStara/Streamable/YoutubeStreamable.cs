@@ -19,38 +19,12 @@ public class YoutubeStreamable : IStreamable
         _id = youtubeID;
         _path = cachePath;
         _ytdlp = ytdlp;
-
-        Name = $"*fetching metadata for {_id}*";
     }
     
     private OpusFileStreamable? _streamable;
     bool metadataFetched = false;
 
     private Task? _downloadTask;
-
-    public async Task DownloadMetadataAsync()
-    {
-        if (metadataFetched)
-        {
-            return;
-        }
-        var metadata = await _ytdlp.RunVideoDataFetch("http://www.youtube.com/watch?v=" + _id);
-
-        if (metadata.Success)
-        {
-            Name = $"{metadata.Data.Title}";
-            if (metadata.Data.Duration.HasValue)
-            {
-                Name += $" - ({TimeSpan.FromSeconds(metadata.Data.Duration.Value):g})";
-            }
-        }
-        else
-        {
-            Console.WriteLine($"Failed to fetch metadata for {_id}");
-        }
-        metadataFetched = true;
-    }
-
     public async Task DownloadFile()
     {
         var opusPath="";
@@ -73,11 +47,11 @@ public class YoutubeStreamable : IStreamable
                         arguments: $"-y -i \"{res.Data}\" -vn -acodec copy {Path.GetDirectoryName(res.Data)}/{_id}.opus"
                     )
                 )!.WaitForExitAsync();
+                opusPath = $"{Path.GetDirectoryName(res.Data)}/{_id}.opus";
             }
 
-            opusPath = $"{Path.GetDirectoryName(res.Data)}/{_id}.opus";
         }
-        _streamable = new OpusFileStreamable(opusPath, Name);
+        _streamable = new OpusFileStreamable(opusPath);
     }
     public void Dispose()
     {
@@ -89,7 +63,7 @@ public class YoutubeStreamable : IStreamable
 
     public void Preheat()
     {
-        Console.WriteLine($"Preheating {Name}");
+        Console.WriteLine($"Preheating {_id}");
         if (_streamable != null)
         {
             return;
@@ -101,7 +75,6 @@ public class YoutubeStreamable : IStreamable
         
         _downloadTask = Task.Run(async () =>
         {
-            await DownloadMetadataAsync();
             await DownloadFile();
         });
     }
@@ -119,9 +92,5 @@ public class YoutubeStreamable : IStreamable
         
         return await _streamable.GetSampleSource();
     }
-
-    public string Name { get; private set; }
-    
-    public string CoverUrl {get => $"https://img.youtube.com/vi/{_id}/maxresdefault.jpg";}
     public int Id { get; set; }
 }

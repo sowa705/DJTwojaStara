@@ -1,8 +1,8 @@
 ﻿<template>
-  <div class="queue-entry">
+  <div class="queue-entry" v-bind:class="{ 'currently-playing-item': currentlyPlaying }">
     <div class="song-info">
       <img :src="song.coverUrl" alt="Album Art" class="album-art"/>
-      <span class="song-name">{{ song.name }}</span>
+      <a target="_blank" :href="song.url" class="song-name">{{ song.name }}</a>
     </div>
     <button v-on:click="deleteSong" class="delete-button">Delete</button>
   </div>
@@ -15,6 +15,10 @@ export default {
     song: {
       type: Object,
       required: true
+    },
+    currentlyPlaying: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {
@@ -33,6 +37,10 @@ export default {
   background-color: #fff1;
   padding: 5px;
   border-radius: 8px;
+}
+
+.queue-entry.currently-playing-item {
+  background-color: #00ff0033;
 }
 
 .song-info {
@@ -58,6 +66,8 @@ export default {
   background-color: #fff2;
   color: #fff;
   padding: 0px 10px;
+  margin: 0;
+  margin-left: 10px;
   border-radius: 5px;
   border: none;
   cursor: pointer;

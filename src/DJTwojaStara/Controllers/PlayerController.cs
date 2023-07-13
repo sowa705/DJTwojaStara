@@ -13,12 +13,12 @@ namespace DJTwojaStara.Controllers;
 public class PlayerController : ControllerBase
 {
     private readonly IPlaybackService _playbackService;
-    private readonly IStreamerService _streamerService;
+    private readonly ISearchService _searchService;
     
-    public PlayerController(IPlaybackService playbackService, IStreamerService streamerService)
+    public PlayerController(IPlaybackService playbackService, ISearchService searchService)
     {
         _playbackService = playbackService;
-        _streamerService = streamerService;
+        _searchService = searchService;
     }
     
     [HttpGet]
@@ -31,26 +31,12 @@ public class PlayerController : ControllerBase
         }
         
         var session = _playbackService.GetPlaybackSession(sessionId);
-        var first = session.GetQueue().First();
         var dto = new SessionInfoDto
         {
             Id = session.id,
             ChannelId = session.ChannelID,
             EqPreset = Enum.GetName(typeof(EQPreset), session.EQPreset),
-            CurrentTrack = new SessionTrackDto()
-            {
-                Id = first.Id,
-                Name = first.Name,
-                Length = 0,
-                CoverUrl = first.CoverUrl
-            },
-            Queue = session.GetQueue().Skip(1).Select(x=>new SessionTrackDto()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Length = 0,
-                CoverUrl = x.CoverUrl
-            }).ToList()
+            PlayList = session.PlayList
         };
         
         return Ok(dto);
@@ -67,22 +53,13 @@ public class PlayerController : ControllerBase
         
         var session = _playbackService.GetPlaybackSession(sessionId);
         
-        var streamList = await _streamerService.StreamSongs(query);
+        var searchList = await _searchService.Search(query);
 
-        var streamables = streamList as IStreamable[] ?? streamList.ToArray();
-
-        if (!streamables.Any())
+        if (!searchList.Any())
         {
             return BadRequest("No songs found");
         }
-            
-        session.AddToQueue(streamables);
-
-        if (streamables.Count() == 1)
-        {
-            await streamables.First().DownloadMetadataAsync(); // Download metadata before sending the message
-            return Ok();
-        }
+        session.AddToQueue(searchList);
 
         return Ok();
     }
@@ -104,8 +81,8 @@ public class PlayerController : ControllerBase
     }
     
     [HttpPost]
-    [Route("{sessionID}/skip")]
-    public async Task<ActionResult> SkipTrack([FromRoute] string sessionId)
+    [Route("{sessionID}/next")]
+    public async Task<ActionResult> NextTrack([FromRoute] string sessionId)
     {
         if (!_playbackService.SessionExists(sessionId))
         {
@@ -114,7 +91,23 @@ public class PlayerController : ControllerBase
         
         var session = _playbackService.GetPlaybackSession(sessionId);
         
-        session.Skip(); // Skip current track
+        session.NextSong();
+        
+        return Ok();
+    }
+    
+    [HttpPost]
+    [Route("{sessionID}/prev")]
+    public async Task<ActionResult> PrevTrack([FromRoute] string sessionId)
+    {
+        if (!_playbackService.SessionExists(sessionId))
+        {
+            return NotFound();
+        }
+        
+        var session = _playbackService.GetPlaybackSession(sessionId);
+        
+        session.PreviousSong();
         
         return Ok();
     }

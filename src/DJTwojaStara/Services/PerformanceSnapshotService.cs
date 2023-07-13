@@ -37,7 +37,7 @@ public class PerformanceSnapshotService : IHostedService
                 CPU = (float) cpuPercentage,
                 RAM = GC.GetTotalMemory(false) / 1024f / 1024f,
                 CacheSize = Helpers.GetUsedCacheSpace(),
-                Timestamp = DateTimeOffset.Now
+                Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()
             };
             _logger.LogInformation("Performance snapshot: {Snapshot}", snapshot);
             // save snapshot to database

@@ -11,8 +11,5 @@ public interface IStreamable: IDisposable
     /// </summary>
     void Preheat();
     Task<ISampleSource> GetSampleSource();
-    public Task DownloadMetadataAsync();
-    public string Name { get; }
-    public string CoverUrl { get; }
     public int Id { get; set; }
 }

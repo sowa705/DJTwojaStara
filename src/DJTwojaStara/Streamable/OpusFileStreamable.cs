@@ -10,11 +10,11 @@ public class OpusFileStreamable : IStreamable
 {
     private readonly string _path;
     ISampleSource? openSource;
+    Stream stream;
     
-    public OpusFileStreamable(string path, string name)
+    public OpusFileStreamable(string path)
     {
         _path = path;
-        Name = name;
     }
 
     public void Preheat() // not implemented and not needed
@@ -28,7 +28,7 @@ public class OpusFileStreamable : IStreamable
             return Task.FromResult(openSource);
         }
         
-        var stream = File.OpenRead(_path);
+        stream = File.OpenRead(_path);
         var sampleRate = 48000;
         try
         {
@@ -49,9 +49,6 @@ public class OpusFileStreamable : IStreamable
     {
         return Task.CompletedTask;
     }
-
-    public string Name { get; set; }
-    public string CoverUrl { get; }
     public int Id { get; set; }
 
     public void Dispose()
@@ -60,5 +57,6 @@ public class OpusFileStreamable : IStreamable
         {
             openSource.Dispose();
         }
+        stream.Dispose();
     }
 }
