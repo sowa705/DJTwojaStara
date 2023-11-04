@@ -18,6 +18,13 @@ public static class EqualizerExtensions
                 gains[2] = 5f;
                 gains[3] = 1f;
                 break;
+            case EQPreset.Beyerdynamic:
+                gains[0] = 10f;
+                gains[1] = 8f;
+                gains[2] = 5f;
+                gains[3] = 1f;
+                gains[8] = 15f; // lmao
+                break;
             case EQPreset.Earrape:
                 for (int i = 0; i < gains.Length; i++)
                 {
@@ -48,5 +55,6 @@ public enum EQPreset
     Normal,
     BassBoost,
     Earrape,
-    LaptopSpeakers
+    LaptopSpeakers,
+    Beyerdynamic
 }

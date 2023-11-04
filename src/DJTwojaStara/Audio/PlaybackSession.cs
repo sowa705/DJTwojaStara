@@ -140,13 +140,18 @@ public class PlaybackSession
         {
             while (DateTime.UtcNow-LastPlayTime<TimeSpan.FromMinutes(3))
             {
+                Console.WriteLine("Writing to audio client");
                 if (_mixer.Available)
                 {
                     LastPlayTime=DateTime.UtcNow;
-                    var bytesToSpeak = new byte[48000];
+                    var bytesToSpeak = new byte[48000*8]; // 48000 samples * 2 channels * 2 bytes per sample = 2 seconds of audio
                     var read = source.Read(bytesToSpeak, 0, (int)bytesToSpeak.Length);
                     _playList.CurrentPosition += read / (double)discordFormat.BytesPerSecond;
                     await speakStream.WriteAsync(bytesToSpeak[..read]);
+                }
+                else
+                {
+                    await Task.Delay(500); // throttle cpu usage
                 }
             }
             await speakStream.FlushAsync().ConfigureAwait(false);

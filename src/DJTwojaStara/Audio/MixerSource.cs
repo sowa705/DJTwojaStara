@@ -32,11 +32,14 @@ class MixerSource : ISampleSource
             if (_currentSource == null)
             {
                 // can we get a new song?
-                if (_playList.CurrentSong + 1 >= _playList.SongOrder.Count)
+                if (_playList.CurrentSong + 1 > _playList.SongOrder.Count)
                 {
                     // no more songs in the queue
                     return readSamples;
                 }
+
+                Console.WriteLine("reading next song");
+                
                 // lets get the next song in the queue
                 var nextSong = _playList.Songs.First(x => x.Id == _playList.SongOrder[_playList.CurrentSong]);
                 CurrentStreamable = _streamerService.GetStreamable(nextSong).Result;
@@ -108,7 +111,9 @@ class MixerSource : ISampleSource
     public void ReloadSong()
     {
         _currentSource = null;
-        CurrentStreamable.Dispose();
+        
+        if (CurrentStreamable is not null)
+            CurrentStreamable.Dispose();
         CurrentStreamable = null;
     }
     public bool Available
