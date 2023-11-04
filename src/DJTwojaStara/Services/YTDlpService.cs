@@ -28,6 +28,16 @@ public class YTDlpService : IStreamerService
         Directory.CreateDirectory(_path);
         Directory.CreateDirectory(_path + "/ytdlp-cache");
     }
+
+    private YoutubeDL CreateYTDL()
+    {
+        return new YoutubeDL()
+        {
+            YoutubeDLPath = OperatingSystem.IsLinux() ? "yt-dlp" : "yt-dlp.exe",
+            FFmpegPath = OperatingSystem.IsLinux() ? "ffmpeg" : "ffmpeg.exe"
+        };
+    }
+    
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await YoutubeDL.DownloadYtDlpBinary(_path);
@@ -74,11 +84,11 @@ public class YTDlpService : IStreamerService
 
     public Task<IStreamable> GetStreamable(SongInfo songInfo)
     {
-        return Task.FromResult<IStreamable>(new YoutubeStreamable(songInfo.Id, _path, new YoutubeDL()));
+        return Task.FromResult<IStreamable>(new YoutubeStreamable(songInfo.Id, _path, CreateYTDL()));
     }
 
     public IStreamable GetStreamable(string id)
     {
-        return new YoutubeStreamable(id, _path, new YoutubeDL());
+        return new YoutubeStreamable(id, _path, CreateYTDL());
     }
 }

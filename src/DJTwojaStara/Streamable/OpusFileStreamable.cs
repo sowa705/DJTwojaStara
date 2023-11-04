@@ -17,8 +17,9 @@ public class OpusFileStreamable : IStreamable
         _path = path;
     }
 
-    public void Preheat() // not implemented and not needed
+    public Task Preheat() // not implemented and not needed
     {
+        return Task.CompletedTask;
     }
 
     public Task<ISampleSource> GetSampleSource()

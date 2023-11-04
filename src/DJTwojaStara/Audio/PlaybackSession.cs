@@ -132,7 +132,7 @@ public class PlaybackSession
     private async Task WriteToAudioClient(VoiceNextConnection client)
     {
         LastPlayTime=DateTime.UtcNow;
-        using (var speakStream = client.GetTransmitSink())
+        using (var speakStream = client.GetTransmitSink(60))
         using (var source = _mixer
                    .ToStereo()
                    .AppendSource(x => _equalizer = Equalizer.Create10BandEqualizer(x))
@@ -140,7 +140,6 @@ public class PlaybackSession
         {
             while (DateTime.UtcNow-LastPlayTime<TimeSpan.FromMinutes(3))
             {
-                Console.WriteLine("Writing to audio client");
                 if (_mixer.Available)
                 {
                     LastPlayTime=DateTime.UtcNow;

@@ -61,7 +61,7 @@ public class YoutubeStreamable : IStreamable
         }
     }
 
-    public void Preheat()
+    public async Task Preheat()
     {
         Console.WriteLine($"Preheating {_id}");
         if (_streamable != null)
@@ -73,10 +73,9 @@ public class YoutubeStreamable : IStreamable
             return;
         }
         
-        _downloadTask = Task.Run(async () =>
-        {
-            await DownloadFile();
-        });
+        _downloadTask = DownloadFile();
+        
+        await _downloadTask;
     }
 
     public async Task<ISampleSource> GetSampleSource()
@@ -86,10 +85,8 @@ public class YoutubeStreamable : IStreamable
             return await _streamable.GetSampleSource();
         }
 
-        Preheat(); // preheat if someone didn't call it earlier
-
-        await _downloadTask;
-        
+        await Preheat(); // preheat if someone didn't call it earlier
+    
         return await _streamable.GetSampleSource();
     }
     public int Id { get; set; }

@@ -23,7 +23,7 @@ public class PlaybackService: IPlaybackService
     public async Task<PlaybackSession> CreateSession(DiscordChannel channel)
     {
         var audioClient = await channel.ConnectAsync();
-            
+
         var session = new PlaybackSession(channel.Id, audioClient, _logger, _streamerService);
         Sessions.Add(session);
 

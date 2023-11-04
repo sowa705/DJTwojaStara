@@ -9,7 +9,7 @@ public interface IStreamable: IDisposable
     /// <summary>
     /// Tells the streamable to prepare itself for reading soon
     /// </summary>
-    void Preheat();
+    Task Preheat();
     Task<ISampleSource> GetSampleSource();
     public int Id { get; set; }
 }
