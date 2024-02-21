@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CSCore;
 using CSCore.Streams.Effects;
+using DJTwojaStara.Models;
+using DJTwojaStara.Services;
 using DSharpPlus.VoiceNext;
 using Microsoft.Extensions.Logging;
 using Template;
@@ -20,6 +23,7 @@ public class PlaybackSession
     private ILogger _logger;
     public bool Disconnected;
     private Equalizer _equalizer;
+    private IStreamerService _streamerService;
     
     private EQPreset _eqPreset = EQPreset.Normal;
     public EQPreset EQPreset
@@ -30,15 +34,21 @@ public class PlaybackSession
         }
     }
 
+    public PlayList PlayList { get => _playList; }
+
     int trackCount = 0;
-    public PlaybackSession(ulong channelID, VoiceNextConnection client, ILogger logger)
+    
+    private PlayList _playList = new PlayList();
+    public PlaybackSession(ulong channelID, VoiceNextConnection client, ILogger logger, IStreamerService streamerService)
     {
         id = Guid.NewGuid().ToString();
         ChannelID = channelID;
         _audioClient = client;
         _logger = logger;
+        _streamerService = streamerService;
         
-        _mixer = new MixerSource();
+        
+        _mixer = new MixerSource(_playList, _streamerService);
     }
     public async Task StartStreamAsync()
     {
@@ -47,25 +57,59 @@ public class PlaybackSession
         await WriteToAudioClient(_audioClient);
     }
     
-    public void AddToQueue(IEnumerable<IStreamable> sources)
+    public async Task AddToQueue(IEnumerable<SongInfo> songs)
     {
-        foreach (var source in sources)
+        foreach (var source in songs)
         {
-            source.Id = trackCount++;
             _logger.LogInformation("Adding source {source} to queue", source.Name);
-            _mixer.Sources.Enqueue(source);
+            _playList.Songs.Add(source);
+            _playList.SongOrder.Add(source.Id);
         }
     }
     
     public void RemoveById(int id)
     {
-        _mixer.Sources = new Queue<IStreamable>(_mixer.Sources.Where(x => x.Id != id));
+        //are we removing the current song?
+        if (_mixer.CurrentStreamable.Id == id)
+        {
+            NextSong();
+        }
+        else
+        {
+            _playList.SongOrder.Remove(id.ToString());
+        }
     }
-
-    public void Skip()
+    
+    public void NextSong()
     {
-        _mixer.Skip();
+        if(_playList.CurrentSong < _playList.Songs.Count - 1)
+        {
+            _logger.LogInformation("Skipping to next song");
+            _playList.CurrentSong++;
+            _mixer.ReloadSong();
+            _playList.CurrentPosition = 0;
+        }
+        else
+        {
+            throw new InvalidOperationException("Cannot skip to next song, no more songs in queue");
+        }
     }
+    
+    public void PreviousSong()
+    {
+        if(_playList.CurrentSong > 0)
+        {
+            _logger.LogInformation("Skipping to previous song");
+            _playList.CurrentSong--;
+            _mixer.ReloadSong();
+            _playList.CurrentPosition = 0;
+        }
+        else
+        {
+            throw new InvalidOperationException("Cannot skip to previous song, no more songs in queue");
+        }
+    }
+    
     public void SetEQPreset(EQPreset preset)
     {
         _eqPreset = preset;
@@ -84,18 +128,11 @@ public class PlaybackSession
         Disconnected = true; 
         _audioClient.Disconnect();
     }
-    
-    public List<IStreamable> GetQueue()
-    {
-        var list = _mixer.Sources.ToList();
-        list.Insert(0,_mixer.CurrentStreamable);
-        return list;
-    }
 
     private async Task WriteToAudioClient(VoiceNextConnection client)
     {
         LastPlayTime=DateTime.UtcNow;
-        using (var speakStream = client.GetTransmitSink())
+        using (var speakStream = client.GetTransmitSink(60))
         using (var source = _mixer
                    .ToStereo()
                    .AppendSource(x => _equalizer = Equalizer.Create10BandEqualizer(x))
@@ -106,10 +143,14 @@ public class PlaybackSession
                 if (_mixer.Available)
                 {
                     LastPlayTime=DateTime.UtcNow;
-                    var bytesToSpeak = new byte[48000];
+                    var bytesToSpeak = new byte[48000*8]; // 48000 samples * 2 channels * 2 bytes per sample = 2 seconds of audio
                     var read = source.Read(bytesToSpeak, 0, (int)bytesToSpeak.Length);
-                    
+                    _playList.CurrentPosition += read / (double)discordFormat.BytesPerSecond;
                     await speakStream.WriteAsync(bytesToSpeak[..read]);
+                }
+                else
+                {
+                    await Task.Delay(500); // throttle cpu usage
                 }
             }
             await speakStream.FlushAsync().ConfigureAwait(false);

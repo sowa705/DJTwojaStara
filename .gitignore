@@ -3,3 +3,7 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+*.db
+*.opus
+*.webm
+*.mp4

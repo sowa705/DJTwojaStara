@@ -18,16 +18,26 @@ using YoutubeDLSharp.Options;
 
 namespace DJTwojaStara.Services;
 
-public class YoutubeService : IStreamerService
+public class YTDlpService : IStreamerService
 {
     private readonly string _path;
 
-    public YoutubeService()
+    public YTDlpService()
     {
         _path = Path.GetTempPath()+"/djtwojastara-temp";
         Directory.CreateDirectory(_path);
         Directory.CreateDirectory(_path + "/ytdlp-cache");
     }
+
+    private YoutubeDL CreateYTDL()
+    {
+        return new YoutubeDL()
+        {
+            YoutubeDLPath = OperatingSystem.IsLinux() ? "yt-dlp" : "yt-dlp.exe",
+            FFmpegPath = OperatingSystem.IsLinux() ? "ffmpeg" : "ffmpeg.exe"
+        };
+    }
+    
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await YoutubeDL.DownloadYtDlpBinary(_path);
@@ -69,55 +79,16 @@ public class YoutubeService : IStreamerService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 
-    public async Task<IEnumerable<IStreamable>> StreamSongs(string searchQuery)
+    public Task<IStreamable> GetStreamable(SongInfo songInfo)
     {
-        searchQuery = searchQuery.Trim();
-        var ytdlp = new YoutubeDL();
-        
-        ytdlp.FFmpegPath = _path+"/ffmpeg";
-        ytdlp.YoutubeDLPath = _path+"/yt-dlp";
-        ytdlp.OutputFolder = _path + "/ytdlp-cache";
-        ytdlp.OutputFileTemplate = "%(id)s.%(ext)s";
-        var targetIDs = new[] { "" };
+        return Task.FromResult<IStreamable>(new YoutubeStreamable(songInfo.Id, _path, CreateYTDL()));
+    }
 
-        if (searchQuery.StartsWith("http"))
-        {
-            var uri = new Uri(searchQuery);
-            var parsed = HttpUtility.ParseQueryString(uri.Query);
-            
-            if (parsed["list"] is not null)
-            {
-                var searchResults = await ytdlp.RunWithOptions(
-                    new string[] { $"{searchQuery}" },
-                    OptionSet.FromString(new [] { "--flat-playlist", "--get-id" }),
-                    CancellationToken.None);
-                
-                if (searchResults.Data.Length>0)
-                {
-                    targetIDs = searchResults.Data.ToArray();
-                }
-            }
-            else
-            {
-                targetIDs[0] = parsed["v"];
-            }
-        }
-        else
-        {
-            var searchResults = await ytdlp.RunWithOptions(
-                new string[] { $"ytsearch1:\"{searchQuery}\"" },
-                OptionSet.FromString(new [] { "--get-id" }),
-                CancellationToken.None);
-            
-            if (searchResults.Data.Length>0)
-            {
-                targetIDs[0] = searchResults.Data[0];
-            }
-        }
-
-        return targetIDs.Select(x => new YoutubeStreamable(x, _path, ytdlp));
+    public IStreamable GetStreamable(string id)
+    {
+        return new YoutubeStreamable(id, _path, CreateYTDL());
     }
 }

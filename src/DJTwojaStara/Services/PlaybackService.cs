@@ -11,18 +11,20 @@ namespace DJTwojaStara.Services;
 public class PlaybackService: IPlaybackService
 {
     private ILogger<PlaybackService> _logger;
+    private readonly IStreamerService _streamerService;
     public List<PlaybackSession> Sessions = new List<PlaybackSession>();
 
-    public PlaybackService(ILogger<PlaybackService> logger)
+    public PlaybackService(ILogger<PlaybackService> logger, IStreamerService streamerService)
     {
         _logger = logger;
+        _streamerService = streamerService;
     }
 
     public async Task<PlaybackSession> CreateSession(DiscordChannel channel)
     {
         var audioClient = await channel.ConnectAsync();
-            
-        var session = new PlaybackSession(channel.Id, audioClient, _logger);
+
+        var session = new PlaybackSession(channel.Id, audioClient, _logger, _streamerService);
         Sessions.Add(session);
 
         Task.Run(() => session.StartStreamAsync()); // Start in the background without awaiting

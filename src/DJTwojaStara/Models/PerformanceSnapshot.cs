@@ -10,5 +10,5 @@ public record PerformanceSnapshot
     public float CPU { get; init; }
     public float RAM { get; init; }
     public float CacheSize { get; init; }
-    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
+    public long Timestamp { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 }

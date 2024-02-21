@@ -32,15 +32,29 @@ public class InfoController : ControllerBase
     }
     
     [HttpGet]
+    [Route("version")]
+    public async Task<ActionResult<IEnumerable<PerformanceSnapshot>>> GetApplicationVersion()
+    {
+        var version = typeof(Program).Assembly.GetName().Version;
+        return Ok(version);
+    }
+    
+    [HttpGet]
     [Route("sessioncount")]
     public Task<ActionResult<int>> GetSessionCount()
     {
         var count = _playbackService.GetSessionCount();
         return Task.FromResult<ActionResult<int>>(Ok(count));
     }
+    [HttpGet]
+    [Route("invite/enabled")]
+    public Task<ActionResult<bool>> GetInviteEnablement()
+    {
+        return Task.FromResult<ActionResult<bool>>(Ok(true));
+    }
     
     [HttpGet]
-    [Route("invitelink")]
+    [Route("invite/link")]
     public Task<ActionResult<string>> GetInviteLink()
     {
         var url = $"https://discord.com/api/oauth2/authorize?client_id={_discordClientService.Client.CurrentApplication.Id}&permissions=2150647808&scope=bot%20applications.commands";
