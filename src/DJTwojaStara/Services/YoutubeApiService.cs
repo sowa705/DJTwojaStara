@@ -112,7 +112,7 @@ public class YoutubeApiService: ISearchService
             Author = video.Snippet.ChannelTitle,
             Length = ParseDuration(video.ContentDetails.Duration),
             Url = "https://www.youtube.com/watch?v=" + video.Id,
-            CoverUrl = video.Snippet.Thumbnails.High.Url,
+            CoverUrl = video.Snippet.Thumbnails.Maxres.Url,
             Id = video.Id
         };
     }

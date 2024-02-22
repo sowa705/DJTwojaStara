@@ -58,6 +58,10 @@ public class OpusFileStreamable : IStreamable
         {
             openSource.Dispose();
         }
-        stream.Dispose();
+
+        if (stream != null)
+        {
+            stream.Dispose();
+        }
     }
 }

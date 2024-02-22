@@ -112,6 +112,13 @@ public class PlayerController : ControllerBase
         return Ok();
     }
     
+    [HttpGet]
+    [Route("availableEQPresets")]
+    public async Task<ActionResult> GetEQs()
+    {
+        return Ok(Enum.GetNames(typeof(EQPreset)));
+    }
+    
     [HttpPost]
     [Route("{sessionID}/eq/{preset}")]
     public async Task<ActionResult> SetEq([FromRoute] string sessionId, [FromRoute] string preset)

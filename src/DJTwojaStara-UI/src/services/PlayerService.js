@@ -30,3 +30,12 @@ export async function nextSong(sessionid) {
 export async function prevSong(sessionid) {
     const response = await axios.post(apiBase+'/api/Player/'+sessionid+'/prev');
 }
+
+export async function setEQ(sessionid, eqname) {
+    const response = await axios.post(apiBase+'/api/Player/'+sessionid+'/eq/'+eqname);
+}
+
+export async function getAvailableEQPresets() {
+    const response = await axios.get(apiBase+'/api/Player/availableEQPresets');
+    return response.data;
+}

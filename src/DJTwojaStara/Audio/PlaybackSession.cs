@@ -23,6 +23,7 @@ public class PlaybackSession
     private ILogger _logger;
     public bool Disconnected;
     private Equalizer _equalizer;
+    private Equalizer _attenuator;
     private IStreamerService _streamerService;
     
     private EQPreset _eqPreset = EQPreset.Normal;
@@ -135,9 +136,11 @@ public class PlaybackSession
         using (var speakStream = client.GetTransmitSink(60))
         using (var source = _mixer
                    .ToStereo()
+                   .AppendSource(x=> _attenuator = Equalizer.Create10BandEqualizer(x))
                    .AppendSource(x => _equalizer = Equalizer.Create10BandEqualizer(x))
                    .ToWaveSource(discordFormat.BitsPerSample))
         {
+            _attenuator.UseEQPreset(EQPreset.Attenuate);
             while (DateTime.UtcNow-LastPlayTime<TimeSpan.FromMinutes(3))
             {
                 if (_mixer.Available)

@@ -28,6 +28,8 @@ import { RouterLink, RouterView } from 'vue-router'
   padding: 10px 10px;
   border-radius: 6px;
   color: #fff;
+  border: 1px solid #fff1;
+  backdrop-filter: blur(50px);
 }
 .titlebar .title {
   font-size: 2rem;

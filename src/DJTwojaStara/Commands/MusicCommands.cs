@@ -53,7 +53,7 @@ public class MusicCommands : ApplicationCommandModule
         }
     }
     
-    public async Task Respond(InteractionContext ctx, string message, string? id = null)
+    public async Task Respond(InteractionContext ctx, string message, string? id = null, string? embedImage=null)
     {
         // create an embed
         var embed = new DiscordEmbedBuilder
@@ -68,6 +68,11 @@ public class MusicCommands : ApplicationCommandModule
                 IconUrl = "https://cdn.discordapp.com/emojis/1076975001183469578.png?v=1"
             }
         };
+        
+        if (embedImage != null)
+        {
+            embed.ImageUrl = embedImage;
+        }
         
         // send the embed
         await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
@@ -118,7 +123,7 @@ public class MusicCommands : ApplicationCommandModule
 
             if (searchList.Count() == 1)
             {
-                await Respond(ctx, $"Added *{searchList.First().Name}* to the queue",session.id);
+                await Respond(ctx, $"Added **{searchList.First().Name}** to the queue",session.id,searchList.First().CoverUrl);
             }
             else
             {
